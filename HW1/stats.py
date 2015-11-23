@@ -30,7 +30,7 @@ def map_statistics(roads):
 
 
 def print_stats():
-    for k, v in map_statistics(load_map_from_csv(start=0, count=10000)).items():
+    for k, v in map_statistics(load_map_from_csv(count=100)).items():
         print('{}: {}'.format(k, v))
 
 

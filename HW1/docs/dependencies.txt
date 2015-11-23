@@ -3,6 +3,7 @@
 # `pip` for pip-installable libraries. `dir` otherwise
 # example line:
 pip matplotlib
+pip numpy
 
 #another example:
 #dir aima
