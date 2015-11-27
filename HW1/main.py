@@ -7,10 +7,12 @@ We just parse input and call methods from other modules.
 #do NOT import ways. This should be done from other files
 #simply import your modules and call the appropriate functions
 
+from core import *
 
 def simple(source, target, start_time):
     'call function to find path, and return list of indices'
-    raise NotImplementedError
+    return find_route(source, target, start_time)
+
 
     
 def improved(source, target):

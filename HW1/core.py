@@ -1,5 +1,6 @@
 import ways
 from collections import namedtuple
+from math import sqrt
 from ways import load_map_from_csv
 
 # define class Node
@@ -24,7 +25,7 @@ def build_path(node):
         path.append(current_node.state)
         current_node = current_node.parent
     path.reverse()
-    return path
+    return [s.index for s in path]
 
 
 def node_succ(roads, state):
@@ -40,7 +41,7 @@ def astar(roads, init_state, final_state, cost, h, t0):
     hi = h(roads, init_state, final_state)
     open = [Node(init_state, [], 0, hi, hi)]
     close = []
-    while open is not []:
+    while open:
         current_node = open.pop(0)
         close = [current_node] + close
         if current_node.state == final_state:
@@ -78,9 +79,16 @@ def node_cost(roads, s1, s2, t):
 
 
 def node_h(roads, s, final_state):
-    return 1
+    """
+    Calculates the L2 distance between two states (junctions)
+    :param roads: the road map
+    :param s: the first junction
+    :param final_state: the second junction
+    :return: the heuristic value which is the L2 distance between the junctions
+    """
+    return sqrt((final_state.lon-s.lon)**2 + (final_state.lat-s.lat)**2)
 
 
-map = load_map_from_csv(count=100)
-path = astar(map, map[0], map[2], node_cost, node_h, 9)
-print(path)
+def find_route(source, target, start_time):
+    map = load_map_from_csv(count=100)
+    return astar(map, map[source], map[target], node_cost, node_h, start_time)
