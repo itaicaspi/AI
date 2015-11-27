@@ -1,5 +1,6 @@
 import ways
 from collections import namedtuple
+from ways import load_map_from_csv
 
 # define class Node
 Node = namedtuple('Node',
@@ -19,9 +20,10 @@ def build_path(node):
     """
     path = []
     current_node = node
-    while current_node is not []:
-        path = path + current_node.state
-        node = current_node.parent
+    while current_node:
+        path.append(current_node.state)
+        current_node = current_node.parent
+    path.reverse()
     return path
 
 
@@ -30,23 +32,23 @@ def node_succ(roads, state):
 
 
 def insert_node(l, node):
-    l = l.append(node)
+    l.append(node)
     l = sorted(l, key=lambda c: c.f)
 
 
 def astar(roads, init_state, final_state, cost, h, t0):
-    hi = h(init_state)
+    hi = h(roads, init_state, final_state)
     open = [Node(init_state, [], 0, hi, hi)]
     close = []
     while open is not []:
-        current_node = open[0]
+        current_node = open.pop(0)
         close = [current_node] + close
         if current_node.state == final_state:
             return build_path(current_node)
         for s in node_succ(roads, current_node.state):
-            new_g = current_node.g + cost(current_node.state, s, t0)
+            new_g = current_node.g + cost(roads, current_node.state, s, t0)
             old_node = [n for n in open if n.state == s]
-            if old_node is not []:
+            if old_node:
                 old_node = old_node[0]
                 if new_g < old_node.g:
                     old_node.g = new_g
@@ -56,7 +58,7 @@ def astar(roads, init_state, final_state, cost, h, t0):
                     insert_node(open, old_node)
             else:
                 old_node = [n for n in close if n.state == s]
-                if old_node is not []:
+                if old_node:
                     old_node = old_node[0]
                     if new_g < old_node.g:
                         old_node.g = new_g
@@ -65,7 +67,7 @@ def astar(roads, init_state, final_state, cost, h, t0):
                         close = [n for n in close if n.state is not old_node.state]
                         insert_node(open, old_node)
                 else:
-                    new_node = Node(s, current_node, new_g, h(s), new_g + h(s))
+                    new_node = Node(s, current_node, new_g, h(roads, s, final_state), new_g + h(roads, s, final_state))
                     insert_node(open, new_node)
     return []
 
@@ -77,3 +79,8 @@ def node_cost(roads, s1, s2, t):
 
 def node_h(roads, s, final_state):
     return 1
+
+
+map = load_map_from_csv(count=100)
+path = astar(map, map[0], map[2], node_cost, node_h, 9)
+print(path)
