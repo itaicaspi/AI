@@ -11,7 +11,7 @@ from core import *
 
 def simple(source, target, start_time):
     'call function to find path, and return list of indices'
-    return find_route(source, target, start_time)
+    return find_route(source, target, start_time, 100)
 
 
     

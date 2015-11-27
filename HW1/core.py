@@ -52,21 +52,17 @@ def astar(roads, init_state, final_state, cost, h, t0):
             if old_node:
                 old_node = old_node[0]
                 if new_g < old_node.g:
-                    old_node.g = new_g
-                    old_node.parent = current_node
-                    old_node.f = old_node.g + old_node.h
-                    open = [n for n in open if n.state is not old_node.state]
-                    insert_node(open, old_node)
+                    new_node = Node(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h)
+                    open = [n for n in open if n.state is not new_node.state]
+                    insert_node(open, new_node)
             else:
                 old_node = [n for n in close if n.state == s]
                 if old_node:
                     old_node = old_node[0]
                     if new_g < old_node.g:
-                        old_node.g = new_g
-                        old_node.parent = current_node
-                        old_node.f = old_node.g + old_node.h
-                        close = [n for n in close if n.state is not old_node.state]
-                        insert_node(open, old_node)
+                        new_node = Node(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h)
+                        close = [n for n in close if n.state is not new_node.state]
+                        insert_node(open, new_node)
                 else:
                     new_node = Node(s, current_node, new_g, h(roads, s, final_state), new_g + h(roads, s, final_state))
                     insert_node(open, new_node)
@@ -89,6 +85,6 @@ def node_h(roads, s, final_state):
     return sqrt((final_state.lon-s.lon)**2 + (final_state.lat-s.lat)**2)
 
 
-def find_route(source, target, start_time):
-    map = load_map_from_csv(count=100)
-    return astar(map, map[source], map[target], node_cost, node_h, start_time)
+def find_route(source, target, start_time, count):
+    roadMap = load_map_from_csv(count=count)
+    return astar(roadMap, roadMap[source], roadMap[target], node_cost, node_h, start_time)
