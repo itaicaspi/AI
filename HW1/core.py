@@ -2,6 +2,7 @@ import ways
 from collections import namedtuple
 from math import sqrt
 from ways import load_map_from_csv
+from ways.info import SPEED_RANGES
 
 # define class Node
 Node = namedtuple('Node',
@@ -38,7 +39,7 @@ def insert_node(l, node):
 
 
 def astar(roads, init_state, final_state, cost, h, t0):
-    hi = h(roads, init_state, final_state)
+    hi = h(init_state, final_state)
     open = [Node(init_state, [], 0, hi, hi)]
     close = []
     while open:
@@ -64,27 +65,32 @@ def astar(roads, init_state, final_state, cost, h, t0):
                         close = [n for n in close if n.state is not new_node.state]
                         insert_node(open, new_node)
                 else:
-                    new_node = Node(s, current_node, new_g, h(roads, s, final_state), new_g + h(roads, s, final_state))
+                    new_node = Node(s, current_node, new_g, h(s, final_state), new_g + h(s, final_state))
                     insert_node(open, new_node)
     return []
 
 
+def l2_dist(s1, s2):
+    return sqrt((s2.lon-s1.lon)**2 + (s2.lat-s1.lat)**2)
+
+
 def node_cost(roads, s1, s2, t):
     link = [l for l in s1.links if l.target == s2.index]
-    return roads.link_speed_history(link[0], t)
+    speed = sum(SPEED_RANGES[link[0].highway_type])/2  # takes the average speed for the road type
+    dist = l2_dist(s1, s2)
+    return dist / speed # returns the average time for the road
 
 
-def node_h(roads, s, final_state):
-    """
-    Calculates the L2 distance between two states (junctions)
-    :param roads: the road map
-    :param s: the first junction
-    :param final_state: the second junction
-    :return: the heuristic value which is the L2 distance between the junctions
-    """
-    return sqrt((final_state.lon-s.lon)**2 + (final_state.lat-s.lat)**2)
+def node_h(s, final_state):
+    dist = l2_dist(final_state, s)
+    speed = 70
+    return dist / speed
 
 
-def find_route(source, target, start_time, count):
+def find_route(roadMap, source, target, start_time):
+    return astar(roadMap, roadMap[source], roadMap[target], node_cost, node_h, start_time)
+
+
+def load_map_and_find_route(source, target, start_time, count):
     roadMap = load_map_from_csv(count=count)
     return astar(roadMap, roadMap[source], roadMap[target], node_cost, node_h, start_time)
