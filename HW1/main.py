@@ -11,7 +11,7 @@ from core import *
 
 def simple(source, target, start_time):
     'call function to find path, and return list of indices'
-    return load_map_and_find_route(source, target, start_time, 100)
+    return run_astar(source, target, node_cost, node_h, start_time, 100)
 
 
     

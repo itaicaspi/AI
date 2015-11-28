@@ -4,8 +4,8 @@ from math import sqrt
 from ways import load_map_from_csv
 from ways.info import SPEED_RANGES
 
-# define class Node
-Node = namedtuple('Node',
+# define class TimedNode
+TimedNode = namedtuple('Node',
            ['state',    #  Junction: node junction
             'parent',   #  Node: junction parent
             'g',        #  int: cost of the node
@@ -38,9 +38,10 @@ def insert_node(l, node):
     l = sorted(l, key=lambda c: c.f)
 
 
-def astar(roads, init_state, final_state, cost, h, t0):
+def astar_with_time(roads, init_state, final_state, cost, h, t0):
     hi = h(init_state, final_state)
-    open = [Node(init_state, [], 0, hi, hi)]
+    current_time = t0
+    open = [TimedNode(init_state, [], 0, hi, hi)]
     close = []
     while open:
         current_node = open.pop(0)
@@ -48,12 +49,12 @@ def astar(roads, init_state, final_state, cost, h, t0):
         if current_node.state == final_state:
             return build_path(current_node)
         for s in node_succ(roads, current_node.state):
-            new_g = current_node.g + cost(roads, current_node.state, s, t0)
+            new_g = current_node.g + cost(roads, current_node.state, s, t0, t0 + current_node.g) # g is the current time
             old_node = [n for n in open if n.state == s]
             if old_node:
                 old_node = old_node[0]
                 if new_g < old_node.g:
-                    new_node = Node(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h)
+                    new_node = TimedNode(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h)
                     open = [n for n in open if n.state is not new_node.state]
                     insert_node(open, new_node)
             else:
@@ -61,11 +62,11 @@ def astar(roads, init_state, final_state, cost, h, t0):
                 if old_node:
                     old_node = old_node[0]
                     if new_g < old_node.g:
-                        new_node = Node(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h)
+                        new_node = TimedNode(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h)
                         close = [n for n in close if n.state is not new_node.state]
                         insert_node(open, new_node)
                 else:
-                    new_node = Node(s, current_node, new_g, h(s, final_state), new_g + h(s, final_state))
+                    new_node = TimedNode(s, current_node, new_g, h(s, final_state), new_g + h(s, final_state))
                     insert_node(open, new_node)
     return []
 
@@ -80,10 +81,17 @@ def calculate_time(s1, s2, speed):
     return dist / speed
 
 
-def node_cost(roads, s1, s2, t = 0):
+def node_cost_timed(roads, s1, s2, t0 = 1, current_time = 1):
     link = [l for l in s1.links if l.target == s2.index]
-    speed = (1000/60)*sum(SPEED_RANGES[link[0].highway_type])/2  # takes the average speed for the road type in meters per minute
-    return link[0].distance / speed
+    focus = roads.return_focus(s1)
+    focus_sum = 0
+    t_h_curr = calculate_time(s1, s2, (1000/60)*roads.link_speed_history(link, t0))
+    for l in focus:
+        t_r = calculate_time(s1, s2, (1000/60)*roads.realtime_link_speed(link, t0))
+        t_h = calculate_time(s1, s2, (1000/60)*roads.link_speed_history(link, t0))
+        focus_sum += t_h_curr*t_r/t_h
+    return focus_sum/len(focus)
+
 
 
 def node_h(s, final_state):
