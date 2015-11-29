@@ -83,14 +83,15 @@ def calculate_time(s1, s2, speed):
 
 def node_cost_timed(roads, s1, s2, t0 = 1, current_time = 1):
     link = [l for l in s1.links if l.target == s2.index]
-    focus = roads.return_focus(s1)
+    focus = roads.return_focus(s1.index)
     focus_sum = 0
-    t_h_curr = calculate_time(s1, s2, (1000/60)*roads.link_speed_history(link, t0))
+    t_h_curr = calculate_time(s1, s2, (1000/60)*roads.link_speed_history(link[0], current_time))
     for l in focus:
-        t_r = calculate_time(s1, s2, (1000/60)*roads.realtime_link_speed(link, t0))
-        t_h = calculate_time(s1, s2, (1000/60)*roads.link_speed_history(link, t0))
-        focus_sum += t_h_curr*t_r/t_h
-    return focus_sum/len(focus)
+        t_r = calculate_time(s1, s2, (1000/60)*roads.realtime_link_speed(l, t0))
+        t_h = calculate_time(s1, s2, (1000/60)*roads.link_speed_history(l, t0))
+        focus_sum += t_r/t_h
+
+    return (focus_sum*t_h_curr)/len(focus)
 
 
 
@@ -99,10 +100,5 @@ def node_h(s, final_state):
     return calculate_time(s, final_state, speed)
 
 
-def find_route(roadMap, source, target, start_time):
-    return astar(roadMap, roadMap[source], roadMap[target], node_cost, node_h, start_time)
-
-
-def run_astar(source, target, cost=node_cost, h=node_h, start_time=1, count=10000):
-    roadMap = load_map_from_csv(count=count)
-    return astar(roadMap, roadMap[source], roadMap[target], cost, h, start_time)
+roadMap = load_map_from_csv(count=100)
+print('result: ' + str(node_cost_timed(roadMap, roadMap[0], roadMap[1])))
