@@ -102,4 +102,3 @@ def node_h(s, final_state):
 
 roadMap = load_map_from_csv(count=100)
 print('result: ' + str(node_cost_timed(roadMap, roadMap[0], roadMap[1])))
-print('go')
