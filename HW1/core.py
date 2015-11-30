@@ -2,6 +2,7 @@ import ways
 from collections import namedtuple
 from math import sqrt
 from ways import load_map_from_csv
+from ways.tools import compute_distance
 from ways.info import SPEED_RANGES
 
 # define class Node
@@ -71,19 +72,21 @@ def astar(roads, init_state, final_state, cost, h, t0):
 
 
 def l2_dist(s1, s2):
-    mul = 107000
-    return mul*sqrt((s2.lon-s1.lon)**2 + (s2.lat-s1.lat)**2)
+    return  compute_distance(s1.lat, s1.lon, s2.lat, s2.lon)
 
 
 def calculate_time(s1, s2, speed):
     dist = l2_dist(s1, s2)
     return dist / speed
 
+def getLink(roads, s1, s2):
+    link = [l for l in s1.links if l.target == s2.index]
+    return link[0]
 
 def node_cost(roads, s1, s2, t = 0):
-    link = [l for l in s1.links if l.target == s2.index]
-    speed = (1000/60)*sum(SPEED_RANGES[link[0].highway_type])/2  # takes the average speed for the road type in meters per minute
-    return link[0].distance / speed
+    link = getLink(roads, s1, s2)
+    speed = (1000/60) * roads.realtime_link_speed(link, t)
+    return link.distance / speed
 
 
 def node_h(s, final_state):

@@ -2,6 +2,8 @@ import ways
 from collections import namedtuple
 from math import sqrt
 from ways import load_map_from_csv
+from ways.tools import compute_distance
+
 from ways.info import SPEED_RANGES
 
 # define class TimedNode
@@ -72,8 +74,8 @@ def astar_with_time(roads, init_state, final_state, cost, h, t0):
 
 
 def l2_dist(s1, s2):
-    mul = 107000
-    return mul*sqrt((s2.lon-s1.lon)**2 + (s2.lat-s1.lat)**2)
+    return compute_distance(s1.lat, s1.lon, s2.lat, s2.lon)
+
 
 
 def calculate_time(s1, s2, speed):
