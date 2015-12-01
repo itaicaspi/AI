@@ -137,7 +137,6 @@ def node_cost_timed(roads, s1, s2, t0 = 1, current_time = 1):
         t_r = l.distance/kph_to_mpm(roads.realtime_link_speed(l, t0))
         t_h = l.distance/kph_to_mpm(roads.link_speed_history(l, t0))
         focus_sum += t_r/t_h
-
     return (focus_sum*t_h_curr)/len(focus)
 
 
@@ -159,4 +158,4 @@ def run_astar_with_time(source, target, cost=node_cost_timed, h=node_h, start_ti
     roadMap = load_map_from_csv()
     return astar_with_time(roadMap, roadMap[source], roadMap[target], cost, h, start_time)
 
-print(run_astar(460000,460020,start_time=800))
+
