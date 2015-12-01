@@ -89,7 +89,7 @@ def astar_with_time(roads, init_state, final_state, cost, h, t0):
             return build_path(current_node)
         for s in node_succ(roads, current_node.state):
             new_link = get_link(roads, current_node.state, s)
-            new_time = current_node.time + (new_link.distance/roads.realtime_link_speed(new_link, current_node.time))
+            new_time = (current_node.time + (new_link.distance/roads.realtime_link_speed(new_link, current_node.time)))%1440
             new_g = current_node.g + cost(roads, current_node.state, s, t0, new_time) # g is the current time
             old_node = open.get(s.index)
             if old_node:
@@ -132,7 +132,6 @@ def node_cost_timed(roads, s1, s2, t0 = 1, current_time = 1):
     link = get_link(roads, s1, s2)
     focus = roads.return_focus(s1.index)
     focus_sum = 0
-    print(link)
     t_h_curr = link.distance/kph_to_mpm(roads.link_speed_history(link, current_time))
     for l in focus:
         t_r = l.distance/kph_to_mpm(roads.realtime_link_speed(l, t0))
@@ -160,4 +159,4 @@ def run_astar_with_time(source, target, cost=node_cost_timed, h=node_h, start_ti
     roadMap = load_map_from_csv()
     return astar_with_time(roadMap, roadMap[source], roadMap[target], cost, h, start_time)
 
-print(run_astar_with_time(30, 55))
+print(run_astar_with_time(700965,596288,start_time=480))
