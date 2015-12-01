@@ -12,7 +12,8 @@ TimedNode = namedtuple('Node',
             'parent',   #  Node: junction parent
             'g',        #  int: cost of the node
             'h',        #  int: heuristic value of the node
-            'f'         #  int: total cost - g + h
+            'f',        #  int: total cost - g + h
+            'time'      #  float: last time we visited the node
            ])
 
 
@@ -42,8 +43,7 @@ def insert_node(l, node):
 
 def astar_with_time(roads, init_state, final_state, cost, h, t0):
     hi = h(init_state, final_state)
-    current_time = t0
-    open = [TimedNode(init_state, [], 0, hi, hi)]
+    open = [TimedNode(init_state, [], 0, hi, hi,t0)]
     close = []
     while open:
         current_node = open.pop(0)
@@ -51,12 +51,15 @@ def astar_with_time(roads, init_state, final_state, cost, h, t0):
         if current_node.state == final_state:
             return build_path(current_node)
         for s in node_succ(roads, current_node.state):
-            new_g = current_node.g + cost(roads, current_node.state, s, t0, t0 + current_node.g) # g is the current time
+            new_link = getLink(roads, current_node.state, s)
+            new_time = current_node.time + \
+                       calculate_time(current_node.state, s, roads.realtime_link_speed(new_link, current_node.time))
+            new_g = current_node.g + cost(roads, current_node.state, s, t0, t0 + new_time) # g is the current time
             old_node = [n for n in open if n.state == s]
             if old_node:
                 old_node = old_node[0]
                 if new_g < old_node.g:
-                    new_node = TimedNode(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h)
+                    new_node = TimedNode(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h, new_time)
                     open = [n for n in open if n.state is not new_node.state]
                     insert_node(open, new_node)
             else:
@@ -64,22 +67,20 @@ def astar_with_time(roads, init_state, final_state, cost, h, t0):
                 if old_node:
                     old_node = old_node[0]
                     if new_g < old_node.g:
-                        new_node = TimedNode(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h)
+                        new_node = TimedNode(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h, new_time)
                         close = [n for n in close if n.state is not new_node.state]
                         insert_node(open, new_node)
                 else:
-                    new_node = TimedNode(s, current_node, new_g, h(s, final_state), new_g + h(s, final_state))
+                    new_node = TimedNode(s, current_node, new_g, h(s, final_state), new_g + h(s, final_state), new_time)
                     insert_node(open, new_node)
     return []
 
-
-def l2_dist(s1, s2):
-    return compute_distance(s1.lat, s1.lon, s2.lat, s2.lon)
-
-
+def getLink(roads, s1, s2):
+    link = [l for l in s1.links if l.target == s2.index]
+    return link[0]
 
 def calculate_time(s1, s2, speed):
-    dist = l2_dist(s1, s2)
+    dist = compute_distance(s1.lat, s1.lon, s2.lat, s2.lon)
     return dist / speed
 
 
