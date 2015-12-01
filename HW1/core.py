@@ -1,6 +1,4 @@
-import ways
 from collections import namedtuple
-from math import sqrt
 from ways import load_map_from_csv
 from ways.tools import compute_distance
 from ways.info import SPEED_RANGES
@@ -120,6 +118,11 @@ def astar_with_time(roads, init_state, final_state, cost, h, t0):
     return []
 
 
+# converts KM per hour to meters per minute
+def kph_to_mpm(speed):
+    return (1000/60)*speed
+
+
 def calculate_time(s1, s2, speed):
     dist = compute_distance(s1.lat, s1.lon, s2.lat, s2.lon)
     return dist / speed
@@ -128,7 +131,7 @@ def calculate_time(s1, s2, speed):
 # cost function for the regular astar
 def node_cost(roads, s1, s2, t = 0):
     link = get_link(roads, s1, s2)
-    speed = (1000/60) * roads.realtime_link_speed(link, t)
+    speed = kph_to_mpm(roads.realtime_link_speed(link, t))
     return link.distance / speed
 
 
@@ -137,17 +140,17 @@ def node_cost_timed(roads, s1, s2, t0 = 1, current_time = 1):
     link = [l for l in s1.links if l.target == s2.index]
     focus = roads.return_focus(s1.index)
     focus_sum = 0
-    t_h_curr = calculate_time(s1, s2, (1000/60)*roads.link_speed_history(link[0], current_time))
+    t_h_curr = calculate_time(s1, s2, kph_to_mpm(roads.link_speed_history(link[0], current_time)))
     for l in focus:
-        t_r = calculate_time(s1, s2, (1000/60)*roads.realtime_link_speed(l, t0))
-        t_h = calculate_time(s1, s2, (1000/60)*roads.link_speed_history(l, t0))
+        t_r = calculate_time(s1, s2, kph_to_mpm(roads.realtime_link_speed(l, t0)))
+        t_h = calculate_time(s1, s2, kph_to_mpm(roads.link_speed_history(l, t0)))
         focus_sum += t_r/t_h
 
     return (focus_sum*t_h_curr)/len(focus)
 
 
 def node_h(s, final_state):
-    speed = (1000/60)*110 # convert to meters per minute
+    speed = kph_to_mpm(max(max(SPEED_RANGES))) # convert to meters per minute
     return calculate_time(s, final_state, speed)
 
 
@@ -155,6 +158,11 @@ def find_route(roadMap, source, target, start_time):
     return astar(roadMap, roadMap[source], roadMap[target], node_cost, node_h, start_time)
 
 
-def run_astar(source, target, cost=node_cost, h=node_h, start_time=1, count=10000):
-    roadMap = load_map_from_csv(count=count)
+def run_astar(source, target, cost=node_cost, h=node_h, start_time=1):
+    roadMap = load_map_from_csv()
     return astar(roadMap, roadMap[source], roadMap[target], cost, h, start_time)
+
+
+def run_astar_with_time(source, target, cost=node_cost_timed, h=node_h, start_time=1):
+    roadMap = load_map_from_csv()
+    return astar_with_time(roadMap, roadMap[source], roadMap[target], cost, h, start_time)

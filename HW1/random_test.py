@@ -2,7 +2,7 @@ import random
 from core import find_route
 from ways.draw import plot_path
 from ways import load_map_from_csv
-from core import node_cost, node_h
+from core import node_h, get_link
 import matplotlib.pyplot as plt
 
 def generate_tests(count, total_junctions):
@@ -23,7 +23,7 @@ def generate_tests(count, total_junctions):
     for path in paths:
         actual_time = 0
         for i in range(0,len(path)-1):
-            actual_time += roadMap.realtime_link_speed(getLink(roadMap, path[i], path[i+1]))
+            actual_time += roadMap.realtime_link_speed(get_link(roadMap, path[i], path[i+1]))
         f.write(str(actual_time) + ', ')
 
     f.write('\n')
@@ -32,10 +32,6 @@ def generate_tests(count, total_junctions):
         f.write(str(heuristic_time) + ', ')
 
     return paths
-
-def getLink(roads, s1, s2):
-    link = [l for l in s1.links if l.target == s2.index]
-    return link[0]
 
 if __name__ == '__main__':
     paths = generate_tests(20, 1000)
