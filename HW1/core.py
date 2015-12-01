@@ -42,11 +42,6 @@ def node_succ(roads, state):
     return [roads[l.target] for l in state.links]
 
 
-def insert_node(l, node):
-    l.append(node)
-    return sorted(l, key=lambda c: c.f)
-
-
 def get_link(roads, s1, s2):
     link = [l for l in s1.links if l.target == s2.index]
     return link[0]
@@ -85,11 +80,11 @@ def astar(roads, init_state, final_state, cost, h, t0):
 
 def astar_with_time(roads, init_state, final_state, cost, h, t0):
     hi = h(init_state, final_state)
-    open = [TimedNode(init_state, [], 0, hi, hi, t0)]
-    close = []
+    open = pqdict({init_state.index: TimedNode(init_state, [], 0, hi, hi, t0)}, key=lambda x: x.f)
+    close = dict()
     while open:
-        current_node = open.pop(0)
-        close = [current_node] + close
+        current_node = open.popitem()[1]
+        close[current_node.state.index] = current_node
         if current_node.state == final_state:
             return build_path(current_node)
         for s in node_succ(roads, current_node.state):
@@ -97,24 +92,22 @@ def astar_with_time(roads, init_state, final_state, cost, h, t0):
             new_time = current_node.time + \
                        calculate_time(current_node.state, s, roads.realtime_link_speed(new_link, current_node.time))
             new_g = current_node.g + cost(roads, current_node.state, s, t0, t0 + new_time) # g is the current time
-            old_node = [n for n in open if n.state == s]
+            old_node = open.get(s.index)
             if old_node:
-                old_node = old_node[0]
                 if new_g < old_node.g:
                     new_node = TimedNode(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h, new_time)
-                    open = [n for n in open if n.state is not new_node.state]
-                    insert_node(open, new_node)
+                    del open[old_node.state.index]
+                    open[new_node.state.index] = new_node
             else:
-                old_node = [n for n in close if n.state == s]
+                old_node = close.get(s.index)
                 if old_node:
-                    old_node = old_node[0]
                     if new_g < old_node.g:
                         new_node = TimedNode(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h, new_time)
-                        close = [n for n in close if n.state is not new_node.state]
-                        insert_node(open, new_node)
+                        del close[old_node.state.index]
+                        open[new_node.state.index] = new_node
                 else:
                     new_node = TimedNode(s, current_node, new_g, h(s, final_state), new_g + h(s, final_state), new_time)
-                    insert_node(open, new_node)
+                    open[new_node.state.index] = new_node
     return []
 
 
@@ -163,8 +156,8 @@ def run_astar(source, target, cost=node_cost, h=node_h, start_time=1):
     return astar(roadMap, roadMap[source], roadMap[target], cost, h, start_time)
 
 
-def run_astar_with_time(source, target, cost=node_cost_timed, h=node_h, start_time=1):
+def run_astar_with_time(source, target, cost=node_cost_timed, h=node_h, start_time=700):
     roadMap = load_map_from_csv()
     return astar_with_time(roadMap, roadMap[source], roadMap[target], cost, h, start_time)
 
-print(run_astar(30, 55))
+print(run_astar_with_time(30, 55))
