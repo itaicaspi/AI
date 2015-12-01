@@ -159,4 +159,4 @@ def run_astar_with_time(source, target, cost=node_cost_timed, h=node_h, start_ti
     roadMap = load_map_from_csv()
     return astar_with_time(roadMap, roadMap[source], roadMap[target], cost, h, start_time)
 
-print(run_astar_with_time(700965,596288,start_time=480))
+print(run_astar(460000,460020,start_time=800))
