@@ -2,7 +2,8 @@
 
 # `pip` for pip-installable libraries. `dir` otherwise
 # example line:
-pip matplotlib
+# pip matplotlib
+pip pqdict
 pip numpy
 
 #another example:
