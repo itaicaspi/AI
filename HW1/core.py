@@ -55,7 +55,7 @@ def astar(roads, init_state, final_state, cost, h, t0):
         current_node = open.popitem()[1]
         close[current_node.state.index] = current_node
         if current_node.state == final_state:
-            return build_path(current_node)
+            return current_node.g, build_path(current_node)
         for s in node_succ(roads, current_node.state):
             new_g = current_node.g + cost(roads, current_node.state, s, t0)
             old_node = open.get(s.index)
@@ -78,6 +78,11 @@ def astar(roads, init_state, final_state, cost, h, t0):
     return []
 
 
+def calculate_time(s1, s2, speed):
+    dist = compute_distance(s1.lat, s1.lon, s2.lat, s2.lon)
+    return dist / speed
+
+
 def astar_with_time(roads, init_state, final_state, cost, h, t0):
     hi = h(init_state, final_state)
     open = pqdict({init_state.index: TimedNode(init_state, [], 0, hi, hi, t0)}, key=lambda x: x.f)
@@ -89,7 +94,7 @@ def astar_with_time(roads, init_state, final_state, cost, h, t0):
             return build_path(current_node)
         for s in node_succ(roads, current_node.state):
             new_link = get_link(roads, current_node.state, s)
-            new_time = (current_node.time + (new_link.distance/roads.realtime_link_speed(new_link, current_node.time)))%1440
+            new_time = (current_node.time + calculate_time(current_node.state, s, roads.realtime_link_speed(new_link, current_node.time)))%1440
             new_g = current_node.g + cost(roads, current_node.state, s, t0, new_time) # g is the current time
             old_node = open.get(s.index)
             if old_node:
@@ -115,8 +120,8 @@ def kph_to_mpm(speed):
     return (1000/60)*speed
 
 
-def calculate_time_for_h(s1,s2,speed):
-    dist = compute_distance(s1.lat,s1.lon,s2.lat,s2.lon)
+def calculate_time_for_h(s1, s2, speed):
+    dist = compute_distance(s1.lat, s1.lon, s2.lat, s2.lon)
     return dist / speed
 
 
@@ -145,16 +150,22 @@ def node_h(s, final_state):
     return calculate_time_for_h(s, final_state, speed)
 
 
+def node_h_timed(s, final_state):
+    speed = kph_to_mpm(max(max(SPEED_RANGES))) # convert to meters per minute
+    return calculate_time_for_h(s, final_state, speed)/6
+
+
+# runs astar without loading the map and return the actual time also (returns [time, path])
 def find_route(roadMap, source, target, start_time):
     return astar(roadMap, roadMap[source], roadMap[target], node_cost, node_h, start_time)
 
 
 def run_astar(source, target, cost=node_cost, h=node_h, start_time=1):
     roadMap = load_map_from_csv()
-    return astar(roadMap, roadMap[source], roadMap[target], cost, h, start_time)
+    return astar(roadMap, roadMap[source], roadMap[target], cost, h, start_time)[1]
 
 
-def run_astar_with_time(source, target, cost=node_cost_timed, h=node_h, start_time=700):
+def run_astar_with_time(source, target, cost=node_cost_timed, h=node_h_timed, start_time=700):
     roadMap = load_map_from_csv()
     return astar_with_time(roadMap, roadMap[source], roadMap[target], cost, h, start_time)
 

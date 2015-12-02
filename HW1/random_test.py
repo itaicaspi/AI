@@ -5,26 +5,30 @@ from ways import load_map_from_csv
 from core import node_h, get_link
 import matplotlib.pyplot as plt
 
-def generate_tests(count, total_junctions):
+def generate_tests(count):
     paths = []
-    roadMap = load_map_from_csv(count=total_junctions)
+    times = []
+    roadMap = load_map_from_csv()
+    total_junctions = len(roadMap)
     for i in range(0, count):
         path = []
         while not path:
             time = random.randint(1, 24*60)
             init_state_idx = random.randint(0, total_junctions-1)
             final_state_idx = random.randint(0, total_junctions-1)
-            path = find_route(roadMap, init_state_idx, final_state_idx, time)
+            print('start: ' + str(init_state_idx) + ' end: ' + str(final_state_idx) + ' time: ' + str(time))
+            print('start node: ' +str(roadMap[init_state_idx]))
+            print('end node: ' + str(roadMap[final_state_idx]))
+            result = find_route(roadMap, init_state_idx, final_state_idx, time)
+            path = result[1]
         paths.append(path)
-        plot_path(roadMap, path)
+        times.append(result[0])
+        plot_path(roadMap, paths[-1])
     plt.show()
 
     f = open('results/AStarRuns.txt', 'w')
-    for path in paths:
-        actual_time = 0
-        for i in range(0,len(path)-1):
-            actual_time += roadMap.realtime_link_speed(get_link(roadMap, path[i], path[i+1]))
-        f.write(str(actual_time) + ', ')
+    for time in times:
+        f.write(str(time) + ', ')
 
     f.write('\n')
     for path in paths:
@@ -34,4 +38,4 @@ def generate_tests(count, total_junctions):
     return paths
 
 if __name__ == '__main__':
-    paths = generate_tests(20, 1000)
+    paths = generate_tests(10)
