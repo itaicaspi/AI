@@ -11,8 +11,8 @@ def generate_tests(count):
     roadMap = load_map_from_csv()
     total_junctions = len(roadMap)
     for i in range(0, count):
-        path = []
-        while not path:
+        result = []
+        while not result:
             time = random.randint(1, 24*60)
             init_state_idx = random.randint(0, total_junctions-1)
             final_state_idx = random.randint(0, total_junctions-1)
@@ -20,11 +20,10 @@ def generate_tests(count):
             print('start node: ' +str(roadMap[init_state_idx]))
             print('end node: ' + str(roadMap[final_state_idx]))
             result = find_route(roadMap, init_state_idx, final_state_idx, time)
-            path = result[1]
-        paths.append(path)
+        paths.append(result[1])
         times.append(result[0])
-        plot_path(roadMap, paths[-1])
-    plt.show()
+        #plot_path(roadMap, paths[-1])
+    #plt.show()
 
     f = open('results/AStarRuns.txt', 'w')
     for time in times:
