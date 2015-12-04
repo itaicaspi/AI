@@ -80,7 +80,7 @@ def astar(roads, init_state, final_state, cost, h, t0):
 
 def astar_with_time(roads, init_state, final_state, cost, h, t0):
     hi = h(init_state, final_state)
-    open = pqdict({init_state.index: TimedNode(init_state, [], 0, hi, hi, t0)}, key=lambda x: x.f)
+    open = pqdict({init_state.index: TimedNode(init_state, [], 0, hi, hi, 0)}, key=lambda x: x.f)
     close = dict()
     while open:
         current_node = open.popitem()[1]
@@ -89,23 +89,25 @@ def astar_with_time(roads, init_state, final_state, cost, h, t0):
             return current_node.time, build_path(current_node)
         for s in node_succ(roads, current_node.state):
             new_link = get_link(roads, current_node.state, s)
-            new_time = (current_node.time + calculate_time(current_node.state, s, roads.realtime_link_speed(new_link, current_node.time)))%1440
-            new_g = current_node.g + cost(roads, current_node.state, s, t0, new_time) # g is the current time
+            real_time_speed = kph_to_mpm(roads.realtime_link_speed(new_link, (t0 + current_node.time) % 1440))    # mpm
+            drive_time = (current_node.time + new_link.distance / real_time_speed)  # the time from source to next junction in minutes
+            real_time = (t0 + drive_time) % 1440    # the time we will arrive at the next junction in minutes
+            new_g = current_node.g + cost(roads, current_node.state, s, t0, real_time) # minutes
             old_node = open.get(s.index)
             if old_node:
                 if new_g < old_node.g:
-                    new_node = TimedNode(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h, new_time)
+                    new_node = TimedNode(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h, drive_time)
                     del open[old_node.state.index]
                     open[new_node.state.index] = new_node
             else:
                 old_node = close.get(s.index)
                 if old_node:
                     if new_g < old_node.g:
-                        new_node = TimedNode(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h, new_time)
+                        new_node = TimedNode(old_node.state, current_node, new_g, old_node.h, new_g + old_node.h, drive_time)
                         del close[old_node.state.index]
                         open[new_node.state.index] = new_node
                 else:
-                    new_node = TimedNode(s, current_node, new_g, h(s, final_state), new_g + h(s, final_state), new_time)
+                    new_node = TimedNode(s, current_node, new_g, h(s, final_state), new_g + h(s, final_state), drive_time)
                     open[new_node.state.index] = new_node
     return []
 
@@ -115,36 +117,39 @@ def kph_to_mpm(speed):
     return (1000/60)*speed
 
 
-# cost function for the regular astar
+# cost function for the regular astar - return time in minutes
 def node_cost(roads, s1, s2, t = 0):
     link = get_link(roads, s1, s2)
-    speed = kph_to_mpm(roads.realtime_link_speed(link, t))
-    return link.distance / speed
+    speed = kph_to_mpm(roads.realtime_link_speed(link, t))  # mpm
+    return link.distance / speed    # minutes
 
 
-# cost function for astar times, using the new equation
+# cost function for astar times, using the new equation - returns time in minutes
 def node_cost_timed(roads, s1, s2, t0 = 1, current_time = 1):
     link = get_link(roads, s1, s2)
     focus = roads.return_focus(s1.index)
     focus_sum = 0
-    t_h_curr = link.distance/kph_to_mpm(roads.link_speed_history(link, current_time))
+    t_h_curr = link.distance/kph_to_mpm(roads.link_speed_history(link, current_time)) # minutes
     for l in focus:
-        t_r = l.distance/kph_to_mpm(roads.realtime_link_speed(l, t0))
-        t_h = l.distance/kph_to_mpm(roads.link_speed_history(l, t0))
-        focus_sum += t_r/t_h
-    return (focus_sum*t_h_curr)/len(focus)
+        t_r = 1/roads.realtime_link_speed(l, t0)   # 1/kph
+        t_h = 1/roads.link_speed_history(l, t0)    # 1/kph
+        focus_sum += t_r/t_h    # number
+    return (focus_sum*t_h_curr)/len(focus)  # minutes
 
 
+# computes time in minutes based on speed in mpm and distance in km
 def calculate_time(s1, s2, speed):
-    dist = compute_distance(s1.lat, s1.lon, s2.lat, s2.lon)*1000 # km to meters
-    return dist / speed
+    dist = compute_distance(s1.lat, s1.lon, s2.lat, s2.lon)*1000 # meters
+    return dist / speed # minutes
 
 
+# returns heuristic value in minutes
 def node_h(s, final_state):
-    speed = kph_to_mpm(max(max(SPEED_RANGES)))
-    return calculate_time(s, final_state, speed)
+    speed = kph_to_mpm(max(max(SPEED_RANGES)))  # mpm
+    return calculate_time(s, final_state, speed) # minutes
 
 
+# returns timed astar heuristic value in minutes
 def node_h_timed(s, final_state):
     return node_h(s, final_state)/6
 
