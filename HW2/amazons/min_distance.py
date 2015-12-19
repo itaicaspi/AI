@@ -148,7 +148,7 @@ state.board[4][1] = 'a'
 state.board[4][0] = 'a'
 state.board[3][8] = 'a'
 state.board[4][8] = 'a'
-state.board[4][9] = 'a'''''
-#state.printBoard()
+state.board[4][9] = 'a'
+state.printBoard()'''
 test(state)
 
