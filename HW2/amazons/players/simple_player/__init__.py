@@ -31,10 +31,6 @@ class Player(abstract.AbstractPlayer):
 
         # Iterative deepening until the time runs out.
         while True:
-            if self.no_more_time():
-                print('no more time')
-                break
-
             print('going to depth: {}, remaining time: {}, prev_alpha: {}, best_move: {}'.format(
                 current_depth, self.time_for_current_move - (time.process_time() - self.clock), prev_alpha, best_move))
 
@@ -43,6 +39,10 @@ class Player(abstract.AbstractPlayer):
                     minimax.search, (board_state, current_depth, -INFINITY, INFINITY, True), {},
                     self.time_for_current_move - (time.process_time() - self.clock))
             except (ExceededTimeError, MemoryError):
+                print('no more time')
+                break
+
+            if self.no_more_time():
                 print('no more time')
                 break
 
