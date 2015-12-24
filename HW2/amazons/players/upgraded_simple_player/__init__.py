@@ -29,7 +29,7 @@ class Player(abstract.AbstractPlayer):
         # Choosing an arbitrary move:
         best_move = possible_moves[0]
 
-        minimax = MiniMaxWithAlphaBetaPruningAndCalmnessCriteria(self.utility, self.color, self.no_more_time, 10)
+        minimax = MiniMaxWithAlphaBetaPruningAndCalmnessCriteria(self.utility, self.color, self.no_more_time, 5)
 
         # Iterative deepening until the time runs out.
         while True:
