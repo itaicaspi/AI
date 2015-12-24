@@ -2,6 +2,7 @@ from __future__ import division, print_function
 import abstract
 from utils import MiniMaxWithAlphaBetaPruning, INFINITY, run_with_limited_time, ExceededTimeError
 import time
+from minimax_with_calmness_criteria import MiniMaxWithAlphaBetaPruningAndCalmnessCriteria
 import numpy
 
 
@@ -28,7 +29,7 @@ class Player(abstract.AbstractPlayer):
         # Choosing an arbitrary move:
         best_move = possible_moves[0]
 
-        minimax = MiniMaxWithAlphaBetaPruning(self.utility, self.color, self.no_more_time)
+        minimax = MiniMaxWithAlphaBetaPruningAndCalmnessCriteria(self.utility, self.color, self.no_more_time, 10)
 
         # Iterative deepening until the time runs out.
         while True:

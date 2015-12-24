@@ -1,10 +1,12 @@
-__author__ = 'Orenk'
 
+import copy
+import utils
 
+INFINITY = float(6000)
 
 class MiniMaxWithAlphaBetaPruningAndCalmnessCriteria:
 
-    def __init__(self, utility, my_color, no_more_time):
+    def __init__(self, utility, my_color, no_more_time, calmness_factor):
         """Initialize a MiniMax algorithms with alpha-beta pruning.
 
         :param utility: The utility function. Should have state as parameter.
@@ -15,7 +17,7 @@ class MiniMaxWithAlphaBetaPruningAndCalmnessCriteria:
         self.utility = utility
         self.my_color = my_color
         self.no_more_time = no_more_time
-        self.calmness_factor = 20
+        self.calmness_factor = calmness_factor
 
     def search(self, state, depth, alpha, beta, maximizing_player):
         """Start the MiniMax algorithm.
