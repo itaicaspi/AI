@@ -24,13 +24,3 @@ Like this: 'class Player(abstract.AbstractPlayer):'
         :return: The value of w.
         """
         raise NotImplementedError
-
-    def subset_selection(self, state, w, possible_moves):
-        """Select a subset of the possible moves using the w parameter and some heuristic
-
-        :param state: the current state
-        :param w: The percent of possible moves to select
-        :param possible_moves: The possible moves for the next move
-        :return: a subset of the possible moves using the w parameter
-        """
-        raise NotImplementedError

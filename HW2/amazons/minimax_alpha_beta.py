@@ -6,6 +6,7 @@ import copy
 import math
 import numpy
 from operator import itemgetter
+import random
 
 __author__ = 'Orenk'
 
@@ -13,7 +14,7 @@ INFINITY = float(6000)
 
 class SelectiveMiniMaxWithAlphaBetaPruning:
 
-    def __init__(self, utility, my_color, no_more_time, w = 1):
+    def __init__(self, utility, my_color, no_more_time, w):
         """Initialize a MiniMax algorithms with alpha-beta pruning.
 
         :param utility: The utility function. Should have state as parameter.
@@ -26,25 +27,47 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
         self.no_more_time = no_more_time
         self.w = w
 
-    # counts the reachable positions on the board
-    def filter_moves(self, state, moves, w):
-        sorted_moves = []
-        # go over all queen moves
-        for move in moves:  # move = ((a,b), (c,d), (e,f))
-            board = numpy.empty((8, 8))
-            counter = 0
-            # for each move, look at the following moves
-            queen_moves = state.getMoves(move(1))  # (a,b)
-            for qm in queen_moves:
-                x, y = qm(1)
-                if board[x][y] == 0:
-                    counter += 1
-                    board[x][y] = 1
-            sorted_moves += (move, counter)
-        sorted_moves = sorted(sorted_moves, key=itemgetter(1, 2))
-        total_moves = len(sorted_moves)
-        return sorted_moves(range(0, (w*total_moves)))
+    def utility(self, state):
+        if not state.legalMoves():
+            return INFINITY if state.currPlayer != self.color else -INFINITY
 
+        u = 0
+        if self.color == 'white':
+            myQueens = state.whiteQ
+            enQueens = state.blackQ
+        else:
+            myQueens = state.blackQ
+            enQueens = state.whiteQ
+
+        for mQ in myQueens:
+            u += len(state.legalPositions(mQ))
+        for eQ in enQueens:
+            u -= len(state.legalPositions(eQ))
+
+        return u
+
+    def subset_selection(self, state, w, possible_moves):
+        # get the number of moves in the subset
+        subset_size = math.ceil(w * len(possible_moves))
+
+        sorted_moves = []
+
+        do_random = True
+
+        # insert all moves with their heuristic value into a list and sort it
+        if do_random:
+            sorted_moves = possible_moves
+            random.shuffle(sorted_moves)
+            return sorted_moves[0:subset_size]
+        else:
+            for move in possible_moves:
+                new_state = copy.deepcopy(state)
+                new_state.doMove(move)
+                sorted_moves += [(self.utility(new_state), move)]
+            sorted(sorted_moves, key=lambda m: m[0], reverse=True)
+
+            # return only the subset_size top elements
+            return [m[1] for m in sorted_moves[0:subset_size]]
 
     def search(self, state, depth, alpha, beta, maximizing_player):
         """Start the MiniMax algorithm.
@@ -64,12 +87,12 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
             # This player has no moves. So the previous player is the winner.
             return INFINITY if state.currPlayer != self.my_color else -INFINITY, None
 
-        filtered_moves = self.filter_moves(next_moves, self.w)
+        filtered_moves = self.subset_selection(state, self.w, next_moves)
 
         if maximizing_player:
-            selected_move = next_moves[0]
+            selected_move = filtered_moves[0]
             best_move_utility = -INFINITY
-            for move in next_moves:
+            for move in filtered_moves:
                 new_state = copy.deepcopy(state)
                 new_state.doMove(move)
                 minimax_value, _ = self.search(new_state, depth - 1, alpha, beta, False)
@@ -82,7 +105,7 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
             return alpha, selected_move
 
         else:
-            for move in next_moves:
+            for move in filtered_moves:
                 new_state = copy.deepcopy(state)
                 new_state.doMove(move)
                 beta = min(beta, self.search(new_state, depth - 1, alpha, beta, True)[0])
