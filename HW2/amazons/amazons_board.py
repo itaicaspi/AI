@@ -92,7 +92,8 @@ class amazonsBoard:
 		"""This object can be inserted into a set or as dict key. NOTICE: Changing the object after it has been inserted
 		into a set or dict (as key) may have unpredicted results!!!
 		"""
-		return hash(','.join(self.board) + self.curr_player)
+		str_board = ','.join(','.join(e) for e in self.board)
+		return hash(str_board + self.currPlayer)
 
 	def __eq__(self, other):
 		return isinstance(other, amazonsBoard) and self.board == other.board and self.curr_player == other.curr_player
