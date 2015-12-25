@@ -7,8 +7,8 @@ import math
 import numpy
 from operator import itemgetter
 import random
+from enum import Enum
 
-__author__ = 'Orenk'
 
 INFINITY = float(6000)
 
@@ -46,28 +46,89 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
 
         return u
 
+    def count_unblocked_neighbours(self, state, move):
+        qx, qy = move[1]
+        ax, ay = move[2]
+        count = 0
+        # check if the arrow is shoot on one of the neighbour cells
+        if abs(qx - ax) <= 1 and abs(qy - ay) <= 1:
+            count -= 1
+
+        # count free neighbour cells
+        if qx > 0:
+            if state.board[qx-1][qy] == ' ':
+                count += 1
+            if qy > 0:
+                if state.board[qx-1][qy-1] == ' ':
+                    count += 1
+            if qy < 9:
+                if state.board[qx-1][qy+1] == ' ':
+                    count += 1
+        if qx < 9:
+            if state.board[qx+1][qy] == ' ':
+                count += 1
+            if qy > 0:
+                if state.board[qx+1][qy-1] == ' ':
+                    count += 1
+            if qy < 9:
+                if state.board[qx+1][qy+1] == ' ':
+                    count += 1
+        if qy > 0:
+            if state.board[qx][qy-1] == ' ':
+                count += 1
+        if qy < 9:
+            if state.board[qx][qy+1] == ' ':
+                count += 1
+
+        return count
+
     def subset_selection(self, state, w, possible_moves):
+        class SelectionMode(Enum):
+            Random = 1
+            Simple = 2
+            Blocked = 3
+
+        # for the first move in the game, the moves of the 2 right queens
+        # are exactly the same as the moves of the 2 left queens
+        num_possible_moves = len(possible_moves)
+        if num_possible_moves == 2176:
+            possible_moves = possible_moves[0:int(num_possible_moves/2-1)]
+
         # get the number of moves in the subset
-        subset_size = math.ceil(w * len(possible_moves))
+        subset_size = 20 #math.ceil(w * len(possible_moves))
 
         sorted_moves = []
 
-        do_random = True
+        mode = SelectionMode.Simple
 
         # insert all moves with their heuristic value into a list and sort it
-        if do_random:
+        if mode == SelectionMode.Random:
+            # random selection
             sorted_moves = possible_moves
             random.shuffle(sorted_moves)
-            return sorted_moves[0:subset_size]
-        else:
+            selected_subset = sorted_moves[0:subset_size]
+        elif mode == SelectionMode.Blocked:
+            # select by number of free neighbours
+            for move in possible_moves:
+                sorted_moves += [(self.count_unblocked_neighbours(state, move), move)]
+            sorted_moves = sorted(sorted_moves, key=lambda m: m[0], reverse=True)
+
+            selected_subset = [m[1] for m in sorted_moves[0:subset_size]]
+        elif mode == SelectionMode.Simple:
+            # select by simple player heuristic
             for move in possible_moves:
                 new_state = copy.deepcopy(state)
                 new_state.doMove(move)
                 sorted_moves += [(self.utility(new_state), move)]
-            sorted(sorted_moves, key=lambda m: m[0], reverse=True)
+            sorted_moves = sorted(sorted_moves, key=lambda m: m[0], reverse=True)
 
             # return only the subset_size top elements
-            return [m[1] for m in sorted_moves[0:subset_size]]
+            selected_subset = [m[1] for m in sorted_moves[0:subset_size]]
+        else:
+            print("Error: Wrong selection mode")
+            selected_subset = possible_moves
+
+        return selected_subset
 
     def search(self, state, depth, alpha, beta, maximizing_player):
         """Start the MiniMax algorithm.
