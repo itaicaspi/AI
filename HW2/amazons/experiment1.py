@@ -1,12 +1,12 @@
 from run_amazons import amazonsRunner
 
 players_scores = dict()
-players = ['simple_player', 'selective_alpha_beta_0.5', 'selective_alpha_beta_0.25', 'selective_alpha_beta_0.125']
+players = ['simple_player', 'selective_alpha_beta_0_5', 'selective_alpha_beta_0_25', 'selective_alpha_beta_0_125']
 
 for player in players:
     players_scores[player] = 0
 
-for k in [2, 10, 50]:
+for k in [2, 10]:
     for player1 in players:
         for player2 in players:
             if player1 == player2:
