@@ -95,11 +95,14 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
             possible_moves = possible_moves[0:int(num_possible_moves/2-1)]
 
         # get the number of moves in the subset
-        subset_size = 20 #math.ceil(w * len(possible_moves))
+        subset_size = math.ceil(w * len(possible_moves))
 
         sorted_moves = []
 
-        mode = SelectionMode.Simple
+        if num_possible_moves < 10 or num_possible_moves > 400:
+            mode = SelectionMode.Random
+        else:
+            mode = SelectionMode.Simple
 
         # insert all moves with their heuristic value into a list and sort it
         if mode == SelectionMode.Random:
