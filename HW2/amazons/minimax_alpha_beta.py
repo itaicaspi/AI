@@ -163,6 +163,8 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
             Simple = 2
             Blocked = 3
 
+        if self.no_more_time:
+            return possible_moves
         # for the first move in the game, the moves of the 2 right queens
         # are exactly the same as the moves of the 2 left queens
         num_possible_moves = len(possible_moves)
@@ -174,7 +176,7 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
 
         sorted_moves = []
 
-        if num_possible_moves > 400 or num_possible_moves < 10:
+        if num_possible_moves > 400:
             mode = SelectionMode.Random
         else:
             mode = SelectionMode.Simple
