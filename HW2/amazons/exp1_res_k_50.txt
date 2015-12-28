@@ -1,0 +1,25 @@
+k is50
+k: 50, player1: simple_player, player2:selective_alpha_beta_0_5, winner:selective_alpha_beta_0_5
+k: 50, player1: simple_player, player2:selective_alpha_beta_0_5, winner:selective_alpha_beta_0_5
+k: 50, player1: simple_player, player2:selective_alpha_beta_0_25, winner:selective_alpha_beta_0_25
+k: 50, player1: simple_player, player2:selective_alpha_beta_0_25, winner:selective_alpha_beta_0_25
+k: 50, player1: simple_player, player2:selective_alpha_beta_0_125, winner:simple_player
+k: 50, player1: simple_player, player2:selective_alpha_beta_0_125, winner:simple_player
+k: 50, player1: selective_alpha_beta_0_5, player2:simple_player, winner:selective_alpha_beta_0_5
+k: 50, player1: selective_alpha_beta_0_5, player2:simple_player, winner:selective_alpha_beta_0_5
+k: 50, player1: selective_alpha_beta_0_5, player2:selective_alpha_beta_0_25, winner:selective_alpha_beta_0_5
+k: 50, player1: selective_alpha_beta_0_5, player2:selective_alpha_beta_0_25, winner:selective_alpha_beta_0_5
+k: 50, player1: selective_alpha_beta_0_5, player2:selective_alpha_beta_0_125, winner:selective_alpha_beta_0_5
+k: 50, player1: selective_alpha_beta_0_5, player2:selective_alpha_beta_0_125, winner:selective_alpha_beta_0_5
+k: 50, player1: selective_alpha_beta_0_25, player2:simple_player, winner:selective_alpha_beta_0_25
+k: 50, player1: selective_alpha_beta_0_25, player2:simple_player, winner:selective_alpha_beta_0_25
+k: 50, player1: selective_alpha_beta_0_25, player2:selective_alpha_beta_0_5, winner:selective_alpha_beta_0_25
+k: 50, player1: selective_alpha_beta_0_25, player2:selective_alpha_beta_0_5, winner:selective_alpha_beta_0_25
+k: 50, player1: selective_alpha_beta_0_25, player2:selective_alpha_beta_0_125, winner:selective_alpha_beta_0_25
+k: 50, player1: selective_alpha_beta_0_25, player2:selective_alpha_beta_0_125, winner:selective_alpha_beta_0_25
+k: 50, player1: selective_alpha_beta_0_125, player2:simple_player, winner:simple_player
+k: 50, player1: selective_alpha_beta_0_125, player2:simple_player, winner:simple_player
+k: 50, player1: selective_alpha_beta_0_125, player2:selective_alpha_beta_0_5, winner:selective_alpha_beta_0_125
+k: 50, player1: selective_alpha_beta_0_125, player2:selective_alpha_beta_0_5, winner:selective_alpha_beta_0_125
+k: 50, player1: selective_alpha_beta_0_125, player2:selective_alpha_beta_0_25, winner:selective_alpha_beta_0_25
+k: 50, player1: selective_alpha_beta_0_125, player2:selective_alpha_beta_0_25, winner:selective_alpha_beta_0_25
