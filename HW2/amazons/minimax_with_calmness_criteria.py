@@ -79,13 +79,14 @@ class MiniMaxWithAlphaBetaPruningAndCalmnessCriteria:
             # This player has no moves. So the previous player is the winner.
             return INFINITY if state.currPlayer != self.my_color else -INFINITY, None
 
+        u = self.utility(state)
         if maximizing_player:
             selected_move = next_moves[0]
             best_move_utility = -INFINITY
             for move in next_moves:
                 new_state = copy.deepcopy(state)
                 new_state.doMove(move)
-                minimax_value, _ = self.search(new_state, depth - 1, alpha, beta, False)
+                minimax_value, _ = self.search_helper(new_state, depth - 1, alpha, beta, False, u)
                 alpha = max(alpha, minimax_value)
                 if minimax_value > best_move_utility:
                     best_move_utility = minimax_value
@@ -98,12 +99,12 @@ class MiniMaxWithAlphaBetaPruningAndCalmnessCriteria:
             for move in next_moves:
                 new_state = copy.deepcopy(state)
                 new_state.doMove(move)
-                beta = min(beta, self.search(new_state, depth - 1, alpha, beta, True)[0])
+                beta = min(beta, self.search_helper(new_state, depth - 1, alpha, beta, True, u)[0])
                 if beta <= alpha or self.no_more_time():
                     break
             return beta, None
 
     def is_calm(self, state, utility, last_value):
-        if self.utility(state) - last_value < self.calmness_factor:
+        if (self.utility(state) - last_value) < self.calmness_factor:
             return True
         return False

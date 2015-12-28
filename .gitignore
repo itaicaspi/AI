@@ -2,8 +2,9 @@
 HW1/.idea/
 HW1/__pycache__/
 HW1/ways/__pycache__/
-__pycache__/
+__pycache__
 *.tmp
 ~$*.doc*
 ~$*.xls*
 ~$*.ppt*
+*.pyc*
