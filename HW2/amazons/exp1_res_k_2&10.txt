@@ -1,0 +1,34 @@
+k is2
+k: 2, player1: simple_player, player2:selective_alpha_beta_0_5, winner:selective_alpha_beta_0_5
+k: 2, player1: simple_player, player2:selective_alpha_beta_0_25, winner:selective_alpha_beta_0_25
+k: 2, player1: simple_player, player2:selective_alpha_beta_0_125, winner:selective_alpha_beta_0_125
+k: 2, player1: selective_alpha_beta_0_5, player2:simple_player, winner:selective_alpha_beta_0_5
+k: 2, player1: selective_alpha_beta_0_5, player2:selective_alpha_beta_0_25, winner:selective_alpha_beta_0_5
+k: 2, player1: selective_alpha_beta_0_5, player2:selective_alpha_beta_0_125, winner:selective_alpha_beta_0_125
+k: 2, player1: selective_alpha_beta_0_25, player2:simple_player, winner:selective_alpha_beta_0_25
+k: 2, player1: selective_alpha_beta_0_25, player2:selective_alpha_beta_0_5, winner:selective_alpha_beta_0_25
+k: 2, player1: selective_alpha_beta_0_25, player2:selective_alpha_beta_0_125, winner:selective_alpha_beta_0_25
+k: 2, player1: selective_alpha_beta_0_125, player2:simple_player, winner:selective_alpha_beta_0_125
+k: 2, player1: selective_alpha_beta_0_125, player2:selective_alpha_beta_0_5, winner:selective_alpha_beta_0_5
+k: 2, player1: selective_alpha_beta_0_125, player2:selective_alpha_beta_0_25, winner:selective_alpha_beta_0_125
+for player: simple_playerscore is: 0
+for player: selective_alpha_beta_0_5score is: 4
+for player: selective_alpha_beta_0_25score is: 4
+for player: selective_alpha_beta_0_125score is: 4
+k is10
+k: 10, player1: simple_player, player2:selective_alpha_beta_0_5, winner:selective_alpha_beta_0_5
+k: 10, player1: simple_player, player2:selective_alpha_beta_0_25, winner:selective_alpha_beta_0_25
+k: 10, player1: simple_player, player2:selective_alpha_beta_0_125, winner:selective_alpha_beta_0_125
+k: 10, player1: selective_alpha_beta_0_5, player2:simple_player, winner:selective_alpha_beta_0_5
+k: 10, player1: selective_alpha_beta_0_5, player2:selective_alpha_beta_0_25, winner:selective_alpha_beta_0_5
+k: 10, player1: selective_alpha_beta_0_5, player2:selective_alpha_beta_0_125, winner:selective_alpha_beta_0_5
+k: 10, player1: selective_alpha_beta_0_25, player2:simple_player, winner:selective_alpha_beta_0_25
+k: 10, player1: selective_alpha_beta_0_25, player2:selective_alpha_beta_0_5, winner:selective_alpha_beta_0_25
+k: 10, player1: selective_alpha_beta_0_25, player2:selective_alpha_beta_0_125, winner:selective_alpha_beta_0_25
+k: 10, player1: selective_alpha_beta_0_125, player2:simple_player, winner:simple_player
+k: 10, player1: selective_alpha_beta_0_125, player2:selective_alpha_beta_0_5, winner:selective_alpha_beta_0_125
+k: 10, player1: selective_alpha_beta_0_125, player2:selective_alpha_beta_0_25, winner:selective_alpha_beta_0_25
+for player: simple_playerscore is: 1
+for player: selective_alpha_beta_0_5score is: 8
+for player: selective_alpha_beta_0_25score is: 9
+for player: selective_alpha_beta_0_125score is: 6

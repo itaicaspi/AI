@@ -23,17 +23,7 @@ for k in [2, 10]:
 
             f.write('k: ' + str(k) + ', player1: ' + player1 + ', player2:' + player2 + ', winner:' + winner+ '\n')
 
-            amazonsRunner(2, k, 5, 'n', player2, player1).run()
-            if winner_color[1] == 'white':
-                winner = player1
-                players_scores[winner] += 1
-            elif winner_color[1] == 'black':
-                winner = player2
-                players_scores[winner] += 1
-
-            f.write('k: ' + str(k) + ', player1: ' + player1 + ', player2:' + player2 + ', winner:' + winner+ '\n')
-
-for player in players:
-    f.write('player' + player + 'score is: ' + players_scores[player] + '\n')
+    for player in players:
+        f.write('for player: ' + player + 'score is: ' + str(players_scores[player]) + '\n')
 
 f.close()
