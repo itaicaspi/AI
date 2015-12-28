@@ -29,7 +29,7 @@ class Player(abstract.AbstractPlayer):
         # Choosing an arbitrary move:
         best_move = possible_moves[0]
 
-        minimax = MiniMaxWithAlphaBetaPruningAndCalmnessCriteria(self.utility, self.color, self.no_more_time, 5)
+        minimax = MiniMaxWithAlphaBetaPruningAndCalmnessCriteria(self.utility, self.color, self.no_more_time, 1)
 
         # Iterative deepening until the time runs out.
         while True:
@@ -71,33 +71,23 @@ class Player(abstract.AbstractPlayer):
 
 
     def utility(self, state):
-            if not state.legalMoves():
-                return INFINITY if state.currPlayer != self.color else -INFINITY
+        if not state.legalMoves():
+            return INFINITY if state.currPlayer != self.color else -INFINITY
 
-            u = 0
-            if self.color == 'white':
-                myQueens = state.whiteQ
-                enQueens = state.blackQ
-            else:
-                myQueens = state.blackQ
-                enQueens = state.whiteQ
+        u = 0
+        if self.color == 'white':
+            myQueens = state.whiteQ
+            enQueens = state.blackQ
+        else:
+            myQueens = state.blackQ
+            enQueens = state.whiteQ
 
-            board = [[0 for x in range(10)] for x in range(10)]
-            for mQ in myQueens:
-                for pos in state.legalPositions(mQ):
-                   board[pos[0]][pos[1]] = 1
-            for row in board:
-                for spot in row:
-                    u += spot
-            board = [[0 for x in range(10)] for x in range(10)]
-            for eQ in enQueens:
-               for pos in state.legalPositions(eQ):
-                   board[pos[0]][pos[1]] = 1
-            for row in board:
-                for spot in row:
-                    u -= spot
+        for mQ in myQueens:
+            u += len(state.legalPositions(mQ))
+        for eQ in enQueens:
+            u -= len(state.legalPositions(eQ))
 
-            return u
+        return u
 
     def no_more_time(self):
         return (time.process_time() - self.clock) >= self.time_for_current_move
