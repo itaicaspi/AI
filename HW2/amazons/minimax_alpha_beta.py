@@ -25,10 +25,10 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
 
     def simple_player_utility(self, state):
         if not state.legalMoves():
-            return INFINITY if state.currPlayer != self.color else -INFINITY
+            return INFINITY if state.currPlayer != self.my_color else -INFINITY
 
         u = 0
-        if self.color == 'white':
+        if self.my_color == 'white':
             myQueens = state.whiteQ
             enQueens = state.blackQ
         else:
@@ -276,7 +276,6 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
             Blocked = 3
             Queen = 4
             Tree = 5
-        start = clock()
 
         # for the first move in the game, the moves of the 2 right queens
         # are exactly the same as the moves of the 2 left queens

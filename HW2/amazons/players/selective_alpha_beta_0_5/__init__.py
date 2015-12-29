@@ -19,7 +19,7 @@ class Player(abstract_selective_player.AbstractSelectivePlayer):
         self.time_for_current_move = self.time_remaining_in_round / self.turns_remaining_in_round - 0.05
         self.move_index = 0
 
-    def get_w(self):
+    def get_w(self, k):
         return 0.5
 
     def get_move(self, board_state, possible_moves):

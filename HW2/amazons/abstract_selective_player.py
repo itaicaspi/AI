@@ -2,6 +2,7 @@
 """
 import abstract
 
+
 class AbstractSelectivePlayer(abstract.AbstractPlayer):
     """Your player must inherit from this class, and your player class name must be 'Player', as in the given examples.
 Like this: 'class Player(abstract.AbstractPlayer):'
@@ -16,11 +17,12 @@ Like this: 'class Player(abstract.AbstractPlayer):'
         """
         abstract.AbstractPlayer.__init__(self, setup_time, player_color, time_per_k_turns, k)
 
-        self.w = self.get_w()
+        self.w = self.get_w(k)
 
-    def get_w(self):
-        """Get the w paramter that determines the number of child nodes to select.
+    def get_w(self, k):
+        """Get the w parameter that determines the number of child nodes to select.
 
+        :param k: the k value for this game
         :return: The value of w.
         """
         raise NotImplementedError

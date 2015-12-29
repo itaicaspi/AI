@@ -17,13 +17,19 @@ class Player(abstract_selective_player.AbstractSelectivePlayer):
         self.turns_remaining_in_round = self.k
         self.time_remaining_in_round = self.time_per_k_turns
         self.time_for_current_move = self.time_remaining_in_round / self.turns_remaining_in_round - 0.05
-        self.move_index = 0
 
     def get_w(self, k):
-        return 0.125
+        if k == 2:
+            return 0.25
+        elif k == 10:
+            return 0.5
+        elif k == 50:
+            return 0.5
+        else:
+            return 1
+        return 1
 
     def get_move(self, board_state, possible_moves):
-        self.move_index += 2
         self.clock = time.process_time()
         self.time_for_current_move = self.time_remaining_in_round / self.turns_remaining_in_round - 0.05
         if len(possible_moves) == 1:
@@ -75,6 +81,7 @@ class Player(abstract_selective_player.AbstractSelectivePlayer):
             self.time_remaining_in_round -= (time.process_time() - self.clock)
         return best_move
 
+
     def utility(self, state):
         if not state.legalMoves():
             return INFINITY if state.currPlayer != self.color else -INFINITY
@@ -98,7 +105,7 @@ class Player(abstract_selective_player.AbstractSelectivePlayer):
         return (time.process_time() - self.clock) >= self.time_for_current_move
 
     def __repr__(self):
-        return '{} {}'.format(abstract.AbstractPlayer.__repr__(self), 'selective_simple')
+        return '{} {}'.format(abstract.AbstractPlayer.__repr__(self), 'upgraded_simple')
 
 """ c:\python34\python run_amazons.py 3 3 3 y simple_player random_player
 """

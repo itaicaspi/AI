@@ -20,7 +20,15 @@ class Player(abstract_selective_player.AbstractSelectivePlayer):
         self.move_index = 0
 
     def get_w(self, k):
-        return 0.125
+        if k == 2:
+            return 0.25
+        elif k == 10:
+            return 0.5
+        elif k == 50:
+            return 0.5
+        else:
+            return 1
+        return 1
 
     def get_move(self, board_state, possible_moves):
         self.move_index += 2
