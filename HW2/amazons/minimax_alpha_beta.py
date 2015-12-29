@@ -1,16 +1,12 @@
 # from __future__ import print_function
-from threading import Thread
-from queue import Queue
-import time
+from time import clock
 import copy
 import math
-import numpy
-from operator import itemgetter
 import random
 from enum import Enum
 
-
 INFINITY = float(6000)
+
 
 class SelectiveMiniMaxWithAlphaBetaPruning:
 
@@ -27,7 +23,7 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
         self.no_more_time = no_more_time
         self.w = w
 
-    def utility(self, state):
+    def simple_player_utility(self, state):
         if not state.legalMoves():
             return INFINITY if state.currPlayer != self.color else -INFINITY
 
@@ -47,6 +43,12 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
         return u
 
     def count_unblocked_neighbours(self, state, move):
+        """
+        Counts the number of free neighbours the queen will have after doing the move
+        :param state: the current state
+        :param move: the move we are checking
+        :return: number of free neighbours
+        """
         qx, qy = move[1]
         ax, ay = move[2]
         count = 0
@@ -82,8 +84,121 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
 
         return count
 
-    def subset_selection2(self, state, w, possible_moves):
-        '''
+    def legal_positions(self, pos, state, board, max_dist):
+        a, b = pos
+        positions = []
+        range_up = range(b - 1, -1, -1)
+        range_down = range(b + 1, 10, 1)
+        range_left = range(a - 1, -1, -1)
+        range_right = range(a + 1, 10, 1)
+        # moves are considered legal only if were not visited before
+        # line positions.
+        for i in range_up:
+            if state.board[a][i] != ' ':
+                break
+            elif board[a][i] == max_dist:
+                positions += [(a, i)]
+        for i in range_down:
+            if state.board[a][i] != ' ':
+                break
+            elif board[a][i] == max_dist:
+                positions += [(a, i)]
+        # row positions.
+        for j in range_left:
+            if state.board[j][b] != ' ':
+                break
+            elif board[j][b] == max_dist:
+                positions += [(j, b)]
+        for j in range_right:
+            if state.board[j][b] != ' ':
+                break
+            elif board[j][b] == max_dist:
+                positions += [(j, b)]
+        # diagonal positions.
+        for j, i in zip(range_left, range_up):
+            if state.board[j][i] != ' ':
+                break
+            elif board[j][i] == max_dist:
+                positions += [(j, i)]
+        for j, i in zip(range_right, range_down):
+            if state.board[j][i] != ' ':
+                break
+            elif board[j][i] == max_dist:
+                positions += [(j, i)]
+        for j, i in zip(range_left, range_down):
+            if state.board[j][i] != ' ':
+                break
+            elif board[j][i] == max_dist:
+                positions += [(j, i)]
+        for j, i in zip(range_right, range_up):
+            if state.board[j][i] != ' ':
+                break
+            elif board[j][i] == max_dist:
+                positions += [(j, i)]
+
+        return positions
+
+    def dist_map(self, state, color, max_depth=9):
+        """
+        returns a map of distances to each one of the cells
+        :param state: the current game state
+        :param color: the player color ('W' for white, 'B' for black)
+        :param max_depth: the maximum depth for the search
+        :return: a board map with the distance for each cell and max_depth for unreachable cells
+        """
+        idx = range(10)
+        board = [[max_depth for x in idx] for x in idx]
+
+        if color == 'W':
+            positions = state.whiteQ
+        else:
+            positions = state.blackQ
+
+        for qu in positions:
+            board[qu[0]][qu[1]] = 0
+
+        for dist in range(1, max_depth):
+            if len(positions) == 0:
+                break
+            new_positions = []
+            for pos in positions:
+                for move in self.legal_positions(pos, state, board, max_depth):
+                    x, y = move
+                    board[x][y] = dist
+                    new_positions += [move]
+            positions = new_positions
+
+        return board
+
+    def cell_owners(self, state, max_depth):
+        """
+        Calculates the cell ownership balance. positive if white wins, negative if black wins
+        :param state: the current state
+        :param max_depth: the maximum depth to search for
+        :return: the cell ownership balance
+        """
+        white_dist_map = self.dist_map(state, 'W', max_depth)
+        black_dist_map = self.dist_map(state, 'B', max_depth)
+        count = 0
+        idx = range(10)
+        for y in idx:
+            for x in idx:
+                diff = black_dist_map[x][y] - white_dist_map[x][y]
+                count += (diff > 0) - (diff < 0)
+        return count
+
+    def min_queen_distance(self, state):
+        if not state.legalMoves():
+            return INFINITY if state.currPlayer != self.my_color else -INFINITY
+
+        u = self.cell_owners(state, 9)
+        if self.my_color != 'white':
+            u = -u
+
+        return u
+
+    def tree_selection(self, state, w, possible_moves):
+        """
         Implements a three level heuristic algorithm:
         1. Select the best queens to move - the ones with the minimum mobility
         2. Select the best places to move each of the selected queens - the places that will guarantee the highest mobility
@@ -93,7 +208,7 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
         :param possible_moves: the list of all possible moves in the current layer
         :param w: the percentage of moves to take
         :return: a list of filtered moves using the given heuristic
-        '''
+        """
         subset_size = math.ceil(w * len(possible_moves))
 
         #################################
@@ -137,7 +252,6 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
             if len(second_level_moves) > subset_size:
                 break
 
-
         #############################################
         # 3rd level - select where to shoot the arrow
 
@@ -155,16 +269,15 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
 
         return third_level_moves
 
-
-
     def subset_selection(self, state, w, possible_moves):
         class SelectionMode(Enum):
             Random = 1
             Simple = 2
             Blocked = 3
+            Queen = 4
+            Tree = 5
+        start = clock()
 
-        if self.no_more_time:
-            return possible_moves
         # for the first move in the game, the moves of the 2 right queens
         # are exactly the same as the moves of the 2 left queens
         num_possible_moves = len(possible_moves)
@@ -174,16 +287,27 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
         # get the number of moves in the subset
         subset_size = math.ceil(w * len(possible_moves))
 
+        # if w ~ 1 then don't waste time on the rest of the function
+        if self.no_more_time() or num_possible_moves == subset_size:
+            return possible_moves
+
+        # if the number of possible moves is low, subset size can be 0 and then we will get error afterwards
+        if subset_size == 0:
+            subset_size = 1
+
         sorted_moves = []
 
-        if num_possible_moves > 400:
+        # user can define a threshold where game stage with a lot of moves will be evaluated with faster heuristics
+        fast_utility_threshold = 3000
+        if num_possible_moves > fast_utility_threshold:
             mode = SelectionMode.Random
         else:
-            mode = SelectionMode.Simple
-            #return self.subset_selection2(state, w, possible_moves)
+            mode = SelectionMode.Queen
 
         # insert all moves with their heuristic value into a list and sort it
-        if mode == SelectionMode.Random:
+        if mode == SelectionMode.Tree:
+            return self.tree_selection(state, w, possible_moves)
+        elif mode == SelectionMode.Random:
             # random selection
             sorted_moves = possible_moves
             random.shuffle(sorted_moves)
@@ -200,15 +324,30 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
             for move in possible_moves:
                 new_state = copy.deepcopy(state)
                 new_state.doMove(move)
-                sorted_moves += [(self.utility(new_state), move)]
+                sorted_moves += [(self.simple_player_utility(new_state), move)]
             sorted_moves = sorted(sorted_moves, key=lambda m: m[0], reverse=True)
 
+            # return only the subset_size top elements
+            selected_subset = [m[1] for m in sorted_moves[0:subset_size]]
+        elif mode == SelectionMode.Queen:
+            # select by simple player heuristic
+            for i in range(0, len(possible_moves)):
+                if (i == 0) or (i > 0 and (possible_moves[i][0] != possible_moves[i-1][0] or possible_moves[i][1] != possible_moves[i-1][1])):
+                    new_state = copy.deepcopy(state)
+                    new_state.doMove(possible_moves[i])
+                    sorted_moves += [(self.min_queen_distance(new_state), possible_moves[i])]
+                else:
+                    sorted_moves += [(sorted_moves[-1][0], possible_moves[i])]
+                if self.no_more_time():
+                    return possible_moves
+            sorted_moves = sorted(sorted_moves, key=lambda m: m[0], reverse=True)
+            if len(sorted_moves) == 0:
+                return possible_moves
             # return only the subset_size top elements
             selected_subset = [m[1] for m in sorted_moves[0:subset_size]]
         else:
             print("Error: Wrong selection mode")
             selected_subset = possible_moves
-
         return selected_subset
 
     def search(self, state, depth, alpha, beta, maximizing_player):

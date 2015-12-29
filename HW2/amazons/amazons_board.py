@@ -96,7 +96,7 @@ class amazonsBoard:
 		return hash(str_board + self.currPlayer)
 
 	def __eq__(self, other):
-		return isinstance(other, amazonsBoard) and self.board == other.board and self.curr_player == other.curr_player
+		return isinstance(other, amazonsBoard) and self.board == other.board and self.currPlayer == other.currPlayer
 
 	# returns all moves the queen in position qu can make. uses legalPositions.
 	def getMoves(self, qu):
