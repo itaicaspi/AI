@@ -321,12 +321,18 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
             selected_subset = [m[1] for m in sorted_moves[0:subset_size]]
         elif mode == SelectionMode.Simple:
             # select by simple player heuristic
-            for move in possible_moves:
-                new_state = copy.deepcopy(state)
-                new_state.doMove(move)
-                sorted_moves += [(self.simple_player_utility(new_state), move)]
+            for i in range(0, len(possible_moves)):
+                if (i == 0) or (i > 0 and (possible_moves[i][0] != possible_moves[i-1][0] or possible_moves[i][1] != possible_moves[i-1][1])):
+                    new_state = copy.deepcopy(state)
+                    new_state.doMove(possible_moves[i])
+                    sorted_moves += [(self.simple_player_utility(new_state), possible_moves[i])]
+                else:
+                    sorted_moves += [(sorted_moves[-1][0], possible_moves[i])]
+                if self.no_more_time():
+                    return possible_moves
             sorted_moves = sorted(sorted_moves, key=lambda m: m[0], reverse=True)
-
+            if len(sorted_moves) == 0:
+                return possible_moves
             # return only the subset_size top elements
             selected_subset = [m[1] for m in sorted_moves[0:subset_size]]
         elif mode == SelectionMode.Queen:
