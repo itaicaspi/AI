@@ -17,7 +17,7 @@ Like this: 'class Player(abstract.AbstractPlayer):'
         """
         abstract.AbstractPlayer.__init__(self, setup_time, player_color, time_per_k_turns, k)
 
-        self.w = self.get_w(k)
+        self.w = self.get_w(time_per_k_turns)
 
     def get_w(self, k):
         """Get the w parameter that determines the number of child nodes to select.
