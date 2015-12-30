@@ -1,12 +1,12 @@
 from run_amazons import amazonsRunner
 
 players_scores = dict()
-players = ['simple_player', 'selective_alpha_beta_k', 'upgraded_simple_player', 'selective_alpha_beta_0_125']
-f = open('exp1_res_k2.txt', 'w')
+players = ['simple_player', 'selective_alpha_beta_k', 'upgraded_simple_player', 'upgraded_selective_alpha_beta_k']
+f = open('exp2_res_k2_10_50.txt', 'w')
 for player in players:
     players_scores[player] = 0
 
-for k in [2, 10]:
+for k in [2, 10, 50]:
     f.write('k is' + str(k) + '\n')
     for player1 in players:
         for player2 in players:
