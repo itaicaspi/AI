@@ -3,7 +3,7 @@ import abstract_selective_player
 from utils import MiniMaxWithAlphaBetaPruning, INFINITY, run_with_limited_time, ExceededTimeError
 import time
 import abstract
-from minimax_alpha_beta import SelectiveMiniMaxWithAlphaBetaPruning
+from selective_minimax_with_calmness_criteria import SelectiveMiniMaxWithAlphaBetaPruningAndCalmnessCriteria
 import math
 import random
 
@@ -41,7 +41,7 @@ class Player(abstract_selective_player.AbstractSelectivePlayer):
         # Choosing an arbitrary move:
         best_move = possible_moves[0]
 
-        minimax = SelectiveMiniMaxWithAlphaBetaPruning(self.utility, self.color, self.no_more_time, self.w)
+        minimax = SelectiveMiniMaxWithAlphaBetaPruningAndCalmnessCriteria(self.utility, self.color, self.no_more_time, self.w, 20)
 
         # Iterative deepening until the time runs out.
         while True:
@@ -105,7 +105,7 @@ class Player(abstract_selective_player.AbstractSelectivePlayer):
         return (time.process_time() - self.clock) >= self.time_for_current_move
 
     def __repr__(self):
-        return '{} {}'.format(abstract.AbstractPlayer.__repr__(self), 'upgraded_simple')
+        return '{} {}'.format(abstract.AbstractPlayer.__repr__(self), 'upgraded_selective_alpha_beta_k')
 
 """ c:\python34\python run_amazons.py 3 3 3 y simple_player random_player
 """

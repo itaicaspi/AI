@@ -30,7 +30,7 @@ class MiniMaxWithAlphaBetaPruningAndCalmnessCriteria:
         :return: A tuple: (The alpha-beta algorithm value, The move in case of max node or None in min mode)
         """
         u = self.utility(state)
-        if  self.no_more_time() or depth == 0:
+        if self.no_more_time() or depth == 0:
             return u, None
 
         next_moves = state.legalMoves()

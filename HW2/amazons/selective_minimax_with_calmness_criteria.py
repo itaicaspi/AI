@@ -1,16 +1,15 @@
-# from __future__ import print_function
-from time import clock
+
 import copy
-import math
+import utils
 import random
 from enum import Enum
+import math
 
 INFINITY = float(6000)
 
+class SelectiveMiniMaxWithAlphaBetaPruningAndCalmnessCriteria:
 
-class SelectiveMiniMaxWithAlphaBetaPruning:
-
-    def __init__(self, utility, my_color, no_more_time, w):
+    def __init__(self, utility, my_color, no_more_time, w, calmness_factor):
         """Initialize a MiniMax algorithms with alpha-beta pruning.
 
         :param utility: The utility function. Should have state as parameter.
@@ -21,6 +20,7 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
         self.utility = utility
         self.my_color = my_color
         self.no_more_time = no_more_time
+        self.calmness_factor = calmness_factor
         self.w = w
 
     def simple_player_utility(self, state):
@@ -366,8 +366,9 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
         :param maximizing_player: Whether this is a max node (True) or a min node (False).
         :return: A tuple: (The alpha-beta algorithm value, The move in case of max node or None in min mode)
         """
-        if depth == 0 or self.no_more_time():
-            return self.utility(state), None
+        u = self.utility(state)
+        if self.no_more_time() or depth == 0:
+            return u, None
 
         next_moves = state.legalMoves()
         if not next_moves:
@@ -375,13 +376,14 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
             return INFINITY if state.currPlayer != self.my_color else -INFINITY, None
 
         filtered_moves = self.subset_selection(state, self.w, next_moves)
+
         if maximizing_player:
             selected_move = filtered_moves[0]
             best_move_utility = -INFINITY
             for move in filtered_moves:
                 new_state = copy.deepcopy(state)
                 new_state.doMove(move)
-                minimax_value, _ = self.search(new_state, depth - 1, alpha, beta, False)
+                minimax_value, _ = self.search_helper(new_state, depth - 1, alpha, beta, False, u)
                 alpha = max(alpha, minimax_value)
                 if minimax_value > best_move_utility:
                     best_move_utility = minimax_value
@@ -394,7 +396,60 @@ class SelectiveMiniMaxWithAlphaBetaPruning:
             for move in filtered_moves:
                 new_state = copy.deepcopy(state)
                 new_state.doMove(move)
-                beta = min(beta, self.search(new_state, depth - 1, alpha, beta, True)[0])
+                beta = min(beta, self.search_helper(new_state, depth - 1, alpha, beta, True, u)[0])
                 if beta <= alpha or self.no_more_time():
                     break
             return beta, None
+
+    def search_helper(self, state, depth, alpha, beta, maximizing_player, last_utility):
+        """Start the MiniMax algorithm.
+
+        :param state: The state to start from.
+        :param depth: The maximum allowed depth for the algorithm.
+        :param alpha: The alpha of the alpha-beta pruning.
+        :param alpha: The beta of the alpha-beta pruning.
+        :param maximizing_player: Whether this is a max node (True) or a min node (False).
+        :return: A tuple: (The alpha-beta algorithm value, The move in case of max node or None in min mode)
+        """
+        u = self.utility(state)
+        if  self.no_more_time() or (depth == 0 and self.is_calm(u, last_utility)):
+            return u, None
+
+        next_moves = state.legalMoves()
+        if not next_moves:
+            # This player has no moves. So the previous player is the winner.
+            return INFINITY if state.currPlayer != self.my_color else -INFINITY, None
+        new_depth = depth - 1
+        if depth == 0:
+            new_depth = 0
+
+        filtered_moves = self.subset_selection(state, self.w, next_moves)
+
+        if maximizing_player:
+            selected_move = filtered_moves[0]
+            best_move_utility = -INFINITY
+            for move in filtered_moves:
+                new_state = copy.deepcopy(state)
+                new_state.doMove(move)
+                minimax_value, _ = self.search_helper(new_state, new_depth, alpha, beta, False, u)
+                alpha = max(alpha, minimax_value)
+                if minimax_value > best_move_utility:
+                    best_move_utility = minimax_value
+                    selected_move = move
+                if beta <= alpha or self.no_more_time():
+                    break
+            return alpha, selected_move
+
+        else:
+            for move in filtered_moves:
+                new_state = copy.deepcopy(state)
+                new_state.doMove(move)
+                beta = min(beta, self.search_helper(new_state, new_depth, alpha, beta, True, u)[0])
+                if beta <= alpha or self.no_more_time():
+                    break
+            return beta, None
+
+    def is_calm(self, u, last_value):
+        if abs(u - last_value) < self.calmness_factor:
+            return True
+        return False
