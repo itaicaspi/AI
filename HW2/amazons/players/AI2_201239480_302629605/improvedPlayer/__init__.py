@@ -1,15 +1,14 @@
 from __future__ import division, print_function
-import abstract_selective_player
+import abstract
 from utils import MiniMaxWithAlphaBetaPruning, INFINITY, run_with_limited_time, ExceededTimeError
 import time
-import abstract
-from selective_minimax_with_calmness_criteria import SelectiveMiniMaxWithAlphaBetaPruningAndCalmnessCriteria
-import math
-import random
+from minimax_with_calmness_criteria import MiniMaxWithAlphaBetaPruningAndCalmnessCriteria
+import numpy
 
-class Player(abstract_selective_player.AbstractSelectivePlayer):
+
+class Player(abstract.AbstractPlayer):
     def __init__(self, setup_time, player_color, time_per_k_turns, k):
-        abstract_selective_player.AbstractSelectivePlayer.__init__(self, setup_time, player_color, time_per_k_turns, k)
+        abstract.AbstractPlayer.__init__(self, setup_time, player_color, time_per_k_turns, k)
         self.clock = time.process_time()
 
         # We are simply providing (remaining time / remaining turns) for each turn in round.
@@ -17,17 +16,6 @@ class Player(abstract_selective_player.AbstractSelectivePlayer):
         self.turns_remaining_in_round = self.k
         self.time_remaining_in_round = self.time_per_k_turns
         self.time_for_current_move = self.time_remaining_in_round / self.turns_remaining_in_round - 0.05
-
-    def get_w(self, k):
-        if k == 2:
-            return 0.25
-        elif k == 10:
-            return 0.5
-        elif k == 50:
-            return 0.75
-        else:
-            return 1
-        return 1
 
     def get_move(self, board_state, possible_moves):
         self.clock = time.process_time()
@@ -41,7 +29,7 @@ class Player(abstract_selective_player.AbstractSelectivePlayer):
         # Choosing an arbitrary move:
         best_move = possible_moves[0]
 
-        minimax = SelectiveMiniMaxWithAlphaBetaPruningAndCalmnessCriteria(self.utility, self.color, self.no_more_time, self.w, 20)
+        minimax = MiniMaxWithAlphaBetaPruningAndCalmnessCriteria(self.utility, self.color, self.no_more_time, 20)
 
         # Iterative deepening until the time runs out.
         while True:
@@ -105,7 +93,7 @@ class Player(abstract_selective_player.AbstractSelectivePlayer):
         return (time.process_time() - self.clock) >= self.time_for_current_move
 
     def __repr__(self):
-        return '{} {}'.format(abstract.AbstractPlayer.__repr__(self), 'upgraded_selective_alpha_beta_k')
+        return '{} {}'.format(abstract.AbstractPlayer.__repr__(self), 'upgraded_simple')
 
 """ c:\python34\python run_amazons.py 3 3 3 y simple_player random_player
 """
