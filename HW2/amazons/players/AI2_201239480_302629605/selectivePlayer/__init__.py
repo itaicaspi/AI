@@ -3,7 +3,7 @@ import abstract_selective_player
 from utils import MiniMaxWithAlphaBetaPruning, INFINITY, run_with_limited_time, ExceededTimeError
 import time
 import abstract
-from minimax_alpha_beta import SelectiveMiniMaxWithAlphaBetaPruning
+from ..minimax_alpha_beta import SelectiveMiniMaxWithAlphaBetaPruning
 import math
 import random
 

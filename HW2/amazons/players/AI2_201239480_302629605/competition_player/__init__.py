@@ -3,7 +3,7 @@ import abstract_selective_player
 from utils import MiniMaxWithAlphaBetaPruning, INFINITY, run_with_limited_time, ExceededTimeError
 import time
 import abstract
-from minimax_alpha_beta import SelectiveMiniMaxWithAlphaBetaPruning
+from ..minimax_alpha_beta import SelectiveMiniMaxWithAlphaBetaPruning
 import math
 import random
 
@@ -20,14 +20,14 @@ class Player(abstract_selective_player.AbstractSelectivePlayer):
         self.move_index = 0
 
     def get_w(self, k):
-        if k == 2:
-            return 0.7
-        elif k == 10:
-            return 0.7
-        elif k == 50:
-            return 0.75
+        if k <= 2:
+            return 0.2
+        elif k <= 15:
+            return 0.25
+        elif k <= 50:
+            return 0.8
         else:
-            return 0.7
+            return 0.8
         return 1
 
     def get_move(self, board_state, possible_moves):

@@ -1,7 +1,7 @@
 from run_amazons import amazonsRunner
 
 players_scores = dict()
-players = ['simple_player', 'selective_alpha_beta_k', 'upgraded_simple_player', 'upgraded_selective_alpha_beta_k']
+players = ['simple_player', 'selectivePlayer', 'improvedPlayer', 'improvedSelectivePlayer']
 f = open('exp2_res_k2_10_50.txt', 'w')
 for player in players:
     players_scores[player] = 0

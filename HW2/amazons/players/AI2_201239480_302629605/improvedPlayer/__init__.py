@@ -2,7 +2,7 @@ from __future__ import division, print_function
 import abstract
 from utils import MiniMaxWithAlphaBetaPruning, INFINITY, run_with_limited_time, ExceededTimeError
 import time
-from minimax_with_calmness_criteria import MiniMaxWithAlphaBetaPruningAndCalmnessCriteria
+from ..minimax_with_calmness_criteria import MiniMaxWithAlphaBetaPruningAndCalmnessCriteria
 import numpy
 
 
