@@ -6,7 +6,7 @@ f = open('exp2_res_k2_10_50.txt', 'w')
 for player in players:
     players_scores[player] = 0
 
-for k in [10]:
+for k in [2, 10, 50]:
     f.write('k is' + str(k) + '\n')
     for player1 in players:
         for player2 in players:
