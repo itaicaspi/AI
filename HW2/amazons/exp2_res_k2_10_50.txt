@@ -1,0 +1,51 @@
+k is2
+k: 2, player1: simple_player, player2:selective_alpha_beta_k, winner:selective_alpha_beta_k
+k: 2, player1: simple_player, player2:upgraded_simple_player, winner:simple_player
+k: 2, player1: simple_player, player2:upgraded_selective_alpha_beta_k, winner:upgraded_selective_alpha_beta_k
+k: 2, player1: selective_alpha_beta_k, player2:simple_player, winner:selective_alpha_beta_k
+k: 2, player1: selective_alpha_beta_k, player2:upgraded_simple_player, winner:selective_alpha_beta_k
+k: 2, player1: selective_alpha_beta_k, player2:upgraded_selective_alpha_beta_k, winner:selective_alpha_beta_k
+k: 2, player1: upgraded_simple_player, player2:simple_player, winner:simple_player
+k: 2, player1: upgraded_simple_player, player2:selective_alpha_beta_k, winner:selective_alpha_beta_k
+k: 2, player1: upgraded_simple_player, player2:upgraded_selective_alpha_beta_k, winner:upgraded_selective_alpha_beta_k
+k: 2, player1: upgraded_selective_alpha_beta_k, player2:simple_player, winner:upgraded_selective_alpha_beta_k
+k: 2, player1: upgraded_selective_alpha_beta_k, player2:selective_alpha_beta_k, winner:upgraded_selective_alpha_beta_k
+k: 2, player1: upgraded_selective_alpha_beta_k, player2:upgraded_simple_player, winner:upgraded_selective_alpha_beta_k
+for player: simple_playerscore is: 2
+for player: selective_alpha_beta_kscore is: 5
+for player: upgraded_simple_playerscore is: 0
+for player: upgraded_selective_alpha_beta_kscore is: 5
+k is10
+k: 10, player1: simple_player, player2:selective_alpha_beta_k, winner:selective_alpha_beta_k
+k: 10, player1: simple_player, player2:upgraded_simple_player, winner:simple_player
+k: 10, player1: simple_player, player2:upgraded_selective_alpha_beta_k, winner:simple_player
+k: 10, player1: selective_alpha_beta_k, player2:simple_player, winner:simple_player
+k: 10, player1: selective_alpha_beta_k, player2:upgraded_simple_player, winner:selective_alpha_beta_k
+k: 10, player1: selective_alpha_beta_k, player2:upgraded_selective_alpha_beta_k, winner:selective_alpha_beta_k
+k: 10, player1: upgraded_simple_player, player2:simple_player, winner:simple_player
+k: 10, player1: upgraded_simple_player, player2:selective_alpha_beta_k, winner:selective_alpha_beta_k
+k: 10, player1: upgraded_simple_player, player2:upgraded_selective_alpha_beta_k, winner:upgraded_selective_alpha_beta_k
+k: 10, player1: upgraded_selective_alpha_beta_k, player2:simple_player, winner:simple_player
+k: 10, player1: upgraded_selective_alpha_beta_k, player2:selective_alpha_beta_k, winner:upgraded_selective_alpha_beta_k
+k: 10, player1: upgraded_selective_alpha_beta_k, player2:upgraded_simple_player, winner:upgraded_selective_alpha_beta_k
+for player: simple_playerscore is: 5
+for player: selective_alpha_beta_kscore is: 4
+for player: upgraded_simple_playerscore is: 0
+for player: upgraded_selective_alpha_beta_kscore is: 3
+k is50
+k: 50, player1: simple_player, player2:selective_alpha_beta_k, winner:simple_player
+k: 50, player1: simple_player, player2:upgraded_simple_player, winner:simple_player
+k: 50, player1: simple_player, player2:upgraded_selective_alpha_beta_k, winner:upgraded_selective_alpha_beta_k
+k: 50, player1: selective_alpha_beta_k, player2:simple_player, winner:simple_player
+k: 50, player1: selective_alpha_beta_k, player2:upgraded_simple_player, winner:selective_alpha_beta_k
+k: 50, player1: selective_alpha_beta_k, player2:upgraded_selective_alpha_beta_k, winner:upgraded_selective_alpha_beta_k
+k: 50, player1: upgraded_simple_player, player2:simple_player, winner:upgraded_simple_player
+k: 50, player1: upgraded_simple_player, player2:selective_alpha_beta_k, winner:selective_alpha_beta_k
+k: 50, player1: upgraded_simple_player, player2:upgraded_selective_alpha_beta_k, winner:upgraded_selective_alpha_beta_k
+k: 50, player1: upgraded_selective_alpha_beta_k, player2:simple_player, winner:simple_player
+k: 50, player1: upgraded_selective_alpha_beta_k, player2:selective_alpha_beta_k, winner:selective_alpha_beta_k
+k: 50, player1: upgraded_selective_alpha_beta_k, player2:upgraded_simple_player, winner:upgraded_selective_alpha_beta_k
+for player: simple_playerscore is: 4
+for player: selective_alpha_beta_kscore is: 3
+for player: upgraded_simple_playerscore is: 1
+for player: upgraded_selective_alpha_beta_kscore is: 4
