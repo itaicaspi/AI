@@ -13,7 +13,9 @@ def get_ad_dataset():
     ad_dataset[ad_dataset == 'ad.'] = 1
     ad_dataset[ad_dataset == 'nonad.'] = 0
     ads_features = get_ads_features(201239480, 302629605)
+    ads_features += [np.shape(ad_dataset)[1]-1]
     ad_dataset = ad_dataset[:, ads_features].astype(int)
+    ad_dataset = ad_dataset.tolist()
 
     return get_noisy_folds(ad_dataset)
 
@@ -28,12 +30,13 @@ def get_har_dataset():
     har_labels[har_labels >= 4] = 0     # replace resting labels
     har_labels.shape = (-1, 1)
     har_dataset = np.concatenate((har_dataset, har_labels), axis=1)
+    har_dataset = har_dataset.tolist()
 
     return get_noisy_folds(har_dataset)
 
 
 def k_fold_cross_validation(folds, noisy_folds, train_on_noisy_data):
-    mean_accuracy = 0
+    mean_accuracy = 0.0
     trees = []
     for test_fold_idx in range(len(folds)):
         # train for all folds except for test_fold_idx
@@ -43,10 +46,11 @@ def k_fold_cross_validation(folds, noisy_folds, train_on_noisy_data):
             if train_fold_idx == test_fold_idx:
                 continue
             if train_on_noisy_data:
-                X += [row[:-1] for row in noisy_folds[train_fold_idx]]
+                X += [row[:-2] for row in noisy_folds[train_fold_idx]]
+                Y += [row[-1] for row in noisy_folds[train_fold_idx]]
             else:
                 X += [row[:-2] for row in folds[train_fold_idx]]
-            Y += [row[-1] for row in folds[train_fold_idx]]
+                Y += [row[-1] for row in folds[train_fold_idx]]
         clf = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=4)
         clf = clf.fit(X, Y)
         # test for test_fold_idx
@@ -54,10 +58,9 @@ def k_fold_cross_validation(folds, noisy_folds, train_on_noisy_data):
         Y = [row[-1] for row in folds[test_fold_idx]]
         results = clf.predict(X)
         count = [1 for i in range(len(results)) if results[i] == Y[i]]
-        mean_accuracy += (len(count)/len(results))
+        mean_accuracy += len(count)/float(len(results))
         trees += [clf]
-    mean_accuracy /= len(folds)
-
+    mean_accuracy /= float(len(folds))
     return trees, mean_accuracy
 
 
@@ -67,9 +70,9 @@ def select_random_features_subset(folds, noisy_folds, q):
     feature_set_size = len(noisy_folds[0][0])
     features_range = list(range(feature_set_size))
     selected_features = random.sample(features_range, ceil(q*feature_set_size))
-    reduced_features_noisy_folds = [[row[selected_features] for row in fold] for fold in noisy_folds]
-    selected_features += [feature_set_size]
-    reduced_features_folds = [[row[selected_features] for row in fold] for fold in folds]
+    selected_features += [feature_set_size-1]
+    reduced_features_noisy_folds = [[[row[f]for f in selected_features] for row in fold] for fold in noisy_folds]
+    reduced_features_folds = [[[row[f]for f in selected_features] for row in fold] for fold in folds]
 
     return reduced_features_noisy_folds, reduced_features_folds
 
@@ -82,7 +85,6 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=""):
     trees = []
     reduced_features_noisy_folds = []
     reduced_features_folds = []
-    num_features = ceil(q*len(noisy_folds[0][0]))
     num_folds = len(folds)
     for s in range(ensemble_size):
         reduced_features_noisy_fold, reduced_features_fold = select_random_features_subset(folds, noisy_folds, q)
@@ -111,9 +113,9 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=""):
         # count number of matches between predicted label and true label
         count = [1 for i in range(len(results)) if results[i] == Y[i]]
         # sum up the prediction accuracy for the ensemble for each fold
-        mean_accuracy += (len(count)/len(results))
+        mean_accuracy += (len(count)/float(len(results)))
     # take the mean accuracy
-    mean_accuracy /= num_folds
+    mean_accuracy /= float(num_folds)
 
     return mean_accuracy
 
