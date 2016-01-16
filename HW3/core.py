@@ -83,7 +83,7 @@ def select_random_features_subset(folds, noisy_folds, q):
     # select random features
     feature_set_size = len(noisy_folds[0][0])
     reduced_features_set_size = ceil(q*feature_set_size)
-    features_range = list(range(feature_set_size))
+    features_range = list(range(feature_set_size-1))
     selected_features = random.sample(features_range, reduced_features_set_size)
     selected_features += [feature_set_size-1]
     reduced_features_noisy_folds = [[[row[f]for f in selected_features] for row in fold] for fold in noisy_folds]
