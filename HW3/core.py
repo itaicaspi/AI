@@ -5,13 +5,14 @@ from sklearn import tree
 import random
 from math import ceil, floor
 from time import clock
+import pickle
 
 def get_ad_dataset():
      # Load ad dataset
     ad_dataset_file = 'ad-dataset/ad.data'
     ad_dataset = np.genfromtxt(ad_dataset_file, delimiter=',', dtype=str)
-    ad_dataset[ad_dataset == 'ad.'] = 1
-    ad_dataset[ad_dataset == 'nonad.'] = 0
+    ad_dataset[ad_dataset == 'ad.'] = 3
+    ad_dataset[ad_dataset == 'nonad.'] = 2
     ads_features = get_ads_features(201239480, 302629605)
     ads_features += [np.shape(ad_dataset)[1]-1]
     ad_dataset = ad_dataset[:, ads_features].astype(int)
@@ -35,7 +36,24 @@ def get_har_dataset():
     return get_noisy_folds(har_dataset)
 
 
-def k_fold_cross_validation(folds, noisy_folds, train_on_noisy_data):
+def dump_data_sets_to_file():
+    ad_noisy_folds, ad_folds = get_ad_dataset()
+    har_noisy_folds, har_folds = get_har_dataset()
+    pickle.dump(ad_folds, open("ad_folds.p", "wb"))
+    pickle.dump(ad_noisy_folds, open("ad_noisy_folds.p", "wb"))
+    pickle.dump(har_folds, open("har_folds.p", "wb"))
+    pickle.dump(har_noisy_folds, open("har_noisy_folds.p", "wb"))
+
+
+def load_data_sets():
+    ad_folds = pickle.load(open("ad_folds.p", "rb"))
+    ad_noisy_folds = pickle.load(open("ad_noisy_folds.p", "rb"))
+    har_folds = pickle.load(open("har_folds.p", "rb"))
+    har_noisy_folds = pickle.load(open("har_noisy_folds.p", "rb"))
+    return ad_folds, ad_noisy_folds, har_folds, har_noisy_folds
+
+
+def k_fold_cross_validation(folds, noisy_folds):
     mean_accuracy = 0.0
     trees = []
     for test_fold_idx in range(len(folds)):
@@ -45,18 +63,14 @@ def k_fold_cross_validation(folds, noisy_folds, train_on_noisy_data):
         for train_fold_idx in range(len(folds)):
             if train_fold_idx == test_fold_idx:
                 continue
-            if train_on_noisy_data:
-                X += [row[:-2] for row in noisy_folds[train_fold_idx]]
-                Y += [row[-1] for row in noisy_folds[train_fold_idx]]
-            else:
-                X += [row[:-2] for row in folds[train_fold_idx]]
-                Y += [row[-1] for row in folds[train_fold_idx]]
+            X += [row[:-1] for row in noisy_folds[train_fold_idx]]
+            Y += [row[-1] for row in noisy_folds[train_fold_idx]]
         clf = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=4)
         clf = clf.fit(X, Y)
         # test for test_fold_idx
-        X = [row[:-2] for row in folds[test_fold_idx]]
+        X = [row[:-1] for row in folds[test_fold_idx]]
         Y = [row[-1] for row in folds[test_fold_idx]]
-        results = clf.predict(X)
+        results = clf.predict(X).tolist()
         count = [1 for i in range(len(results)) if results[i] == Y[i]]
         mean_accuracy += len(count)/float(len(results))
         trees += [clf]
@@ -68,12 +82,12 @@ def select_random_features_subset(folds, noisy_folds, q):
     # folds are assumed to have the label as the last feature, noisy folds assumed NOT to have them
     # select random features
     feature_set_size = len(noisy_folds[0][0])
+    reduced_features_set_size = ceil(q*feature_set_size)
     features_range = list(range(feature_set_size))
-    selected_features = random.sample(features_range, ceil(q*feature_set_size))
+    selected_features = random.sample(features_range, reduced_features_set_size)
     selected_features += [feature_set_size-1]
     reduced_features_noisy_folds = [[[row[f]for f in selected_features] for row in fold] for fold in noisy_folds]
     reduced_features_folds = [[[row[f]for f in selected_features] for row in fold] for fold in folds]
-
     return reduced_features_noisy_folds, reduced_features_folds
 
 
@@ -90,7 +104,7 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=""):
         reduced_features_noisy_fold, reduced_features_fold = select_random_features_subset(folds, noisy_folds, q)
         reduced_features_folds.append(reduced_features_fold)
         reduced_features_noisy_folds.append(reduced_features_noisy_fold)
-        fold_trees, mean_accuracy = k_fold_cross_validation(reduced_features_fold, reduced_features_noisy_fold, True)
+        fold_trees, _ = k_fold_cross_validation(reduced_features_fold, reduced_features_noisy_fold)
         trees.append(fold_trees)
 
     # evaluate the accuracy of each ensemble for each fold and average the results
@@ -99,9 +113,9 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=""):
         # test for test_fold_idx
         results = []
         # labels should be the same for all trees (since we are taking the same examples)
-        Y = [row[-1] for row in reduced_features_folds[0][test_fold_idx]]
+        Y = [row[-1] for row in folds[test_fold_idx]]
         for s in range(ensemble_size):
-            X = [row[:-2] for row in reduced_features_folds[s][test_fold_idx]]
+            X = [row[:-1] for row in reduced_features_folds[s][test_fold_idx]]
             labels = (trees[s][test_fold_idx]).predict(X)
             # sum up the labels predicted by all trees to a single vector
             if results == []:
@@ -120,19 +134,22 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=""):
     return mean_accuracy
 
 if __name__ == '__main__':
+    dumpToFile = False
+    if dumpToFile:
+        dump_data_sets_to_file()
+    else:
+        ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets()
 
-    ad_noisy_folds, ad_folds = get_ad_dataset()
-    start = clock()
-    ensemble_size = 11
-    mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size)
-    print("The mean accuracy for ad dataset ensemble of size 1 = " + str(mean_accuracy))
-    total_time = clock() - start
-    print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+        start = clock()
+        ensemble_size = 11
+        mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size)
+        print("The mean accuracy for ad dataset ensemble of size 1 = " + str(mean_accuracy))
+        total_time = clock() - start
+        print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
-    har_noisy_folds, har_folds = get_har_dataset()
-    start = clock()
-    ensemble_size = 11
-    mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
-    print("The mean accuracy for har dataset ensemble of size 1 = " + str(mean_accuracy))
-    total_time = clock() - start
-    print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+        start = clock()
+        ensemble_size = 11
+        mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
+        print("The mean accuracy for har dataset ensemble of size 1 = " + str(mean_accuracy))
+        total_time = clock() - start
+        print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
