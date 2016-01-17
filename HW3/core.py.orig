@@ -246,6 +246,22 @@ if __name__ == '__main__':
     else:
         ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets()
 
+<<<<<<< HEAD
+        start = clock()
+        ensemble_size = 1
+        mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size)
+        print("The mean accuracy for ad dataset ensemble of size 1 = " + str(mean_accuracy))
+        total_time = clock() - start
+        print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+'''
+        start = clock()
+        ensemble_size = 11
+        mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
+        print("The mean accuracy for har dataset ensemble of size 1 = " + str(mean_accuracy))
+        total_time = clock() - start
+        print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+'''
+=======
         sizes = [5, 11, 15, 21, 25, 31, 35, 41, 45, 51]
 
         for ensemble_size in sizes:
@@ -254,11 +270,10 @@ if __name__ == '__main__':
             print("The mean accuracy for ad dataset ensemble of size " + str(ensemble_size) + " = " + str(mean_accuracy))
             total_time = clock() - start
             print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
-'''
 
             start = clock()
             mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
             print("The mean accuracy for har dataset ensemble of size " + str(ensemble_size) + " = " + str(mean_accuracy))
             total_time = clock() - start
             print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
-'''
+>>>>>>> 067fac5e749b1d3da1d9972f8ff5cbc41c22c06d
