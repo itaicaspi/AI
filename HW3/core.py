@@ -118,7 +118,7 @@ def k_fold_cross_validation(folds, noisy_folds):
                 continue
             X += [row[:-1] for row in noisy_folds[train_fold_idx]]
             Y += [row[-1] for row in noisy_folds[train_fold_idx]]
-        clf = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=4)
+        clf = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=8)
         clf = clf.fit(X, Y)
         # test for test_fold_idx
         X = [row[:-1] for row in folds[test_fold_idx]]
@@ -145,8 +145,8 @@ def select_random_features_subset(folds, noisy_folds, q):
 
 
 def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=""):
-    p = 0.67            # train set size factor
-    q = 0.67            # feature set size factor
+    p = 0.5            # train set size factor
+    q = 0.5            # feature set size factor
 
     # learn 10 ensemble trees
     trees = []
