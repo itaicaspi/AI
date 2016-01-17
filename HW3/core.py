@@ -9,13 +9,7 @@ import pickle
 from enum import Enum
 
 
-class EnsembleType(Enum):
-    IG_with_features_subset = 1
-    Random_with_features_subset = 2
-    Semi_Random_with_features_subset = 3
-    IG_with_examples_subset = 4
-    Random_with_examples_subset = 5
-    Semi_Random_with_examples_subset = 6
+
 
 
 def get_ad_dataset():
@@ -160,6 +154,7 @@ def semi_random_feature_chooser(features, examples, classifications):
     return random.choice(features)
 
 
+
 class FeaturesClassifier:
     def __init__(self, criterion):
         self.criterion = criterion
@@ -241,7 +236,7 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=EnsembleType
         reduced_features_noisy_fold, reduced_features_fold, features_subset_size = select_random_features_subset(folds, noisy_folds, q)
         reduced_features_folds.append(reduced_features_fold)
         reduced_features_noisy_folds.append(reduced_features_noisy_fold)
-        fold_trees = k_fold_cross_validation(reduced_features_fold, reduced_features_noisy_fold, ensemble_type % 3, features_subset_size)
+        fold_trees = k_fold_cross_validation(reduced_features_fold, reduced_features_noisy_fold, ensemble_type, features_subset_size)
         trees.append(fold_trees)
 
     # evaluate the accuracy of each ensemble for each fold and average the results
@@ -270,6 +265,15 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=EnsembleType
 
     return mean_accuracy
 
+class SubsetType(Enum):
+    features = 1
+    examples = 2
+
+    
+class FeatureChooserType(Enum):
+    IG = 1
+    Random = 2
+    Semi_Random = 3
 
 if __name__ == '__main__':
     dumpToFile = False
