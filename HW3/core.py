@@ -3,7 +3,7 @@ from noise import get_noisy_folds
 import numpy as np
 from sklearn import tree
 import random
-from math import ceil, floor
+from math import ceil, floor, log2
 from time import clock
 import pickle
 
@@ -64,7 +64,7 @@ def fit(examples, classifications, features_idx_list, features_classifier, min_s
             count += c
         return round(float(count)/len(classifications))
 
-    feature_idx = features_classifier(features_idx_list)
+    feature_idx = features_classifier(features_idx_list, examples, classifications)
     features_idx_list.remove(feature_idx)
     left_examples = []
     right_examples = []
@@ -82,9 +82,16 @@ def fit(examples, classifications, features_idx_list, features_classifier, min_s
             right_classifications.append(classifications[i])
         i += 1
 
+
     count = 0
     for c in classifications:
         count += c
+    # if all the classification are the same, return the class
+    if count == len(classifications):
+        return 1
+    if count == 0:
+        return 0
+    # if the son is an empty list, return the father's classification
     if len(left_classifications) == 0:
         left_son = round(float(count)/len(classifications))
     else:
@@ -106,8 +113,10 @@ def classify_example(tree, example):
 
 
 def predict(tree, examples):
+    results = []
     for example in examples:
-       classify_example(tree, example)
+       results.append(classify_example(tree, example))
+    return results
 
 
 def k_fold_cross_validation(folds, noisy_folds,criteria="entropy"):
@@ -134,34 +143,83 @@ def k_fold_cross_validation(folds, noisy_folds,criteria="entropy"):
     mean_accuracy /= float(len(folds))
     return trees, mean_accuracy
 
+
+def calculate_entropy(classifications):
+    if len(classifications) == 0:
+        return 0
+    sum = 0
+    for c in [0,1]:
+        pc = [1 for i in range(len(classifications)) if classifications[i] == c]
+        pc = float(len(pc))/len(classifications)
+        if pc == 0:
+            continue
+        sum += pc * log2(pc)
+    return -sum
+
+
+def calculate_ig(feature_idx, examples, classifications):
+    sum = 0
+    for i in [0,1]:
+        e_i = []
+        j = 0
+        for e in examples:
+            if e[feature_idx] == i:
+                e_i.append(classifications[j])
+            j += 1
+        if len(e_i) == 0:
+            continue
+        sum += (float(len(e_i))/len(examples)) * calculate_entropy(e_i)
+    return calculate_entropy(classifications) - sum
+
+
+def semi_random_feature_chooser(features, examples, classifications):
+    features_ig = [calculate_ig(feature, examples, classifications) for feature in features]
+    if sum(features_ig) == 0:
+        return random.choice(features)
+    features_weights = [round((float(f_ig)/sum(features_ig))*100) for f_ig in features_ig]
+    weighted_features = []
+    i = 0
+    for f in features:
+        w = features_weights[i]
+        weighted_features += [f for _ in range(w)]
+        i += 1
+    return random.choice(weighted_features)
+
+
+
 class FeaturesClassifier:
     def __init__(self, criterion):
         self.criterion = criterion
+        self.tree = None
 
-    def classifier(self, features):
+    def classifier(self, features, examples, classifications):
         if  self.criterion == 1:
             return random.choice(features)
         elif self.criterion == 2:
-            return random.choice(features)
+            return semi_random_feature_chooser(features, examples, classifications)
 
     def fit(self, examples, classifications, features_idx_list):
         if  self.criterion >= 1:
-            return fit(examples, classifications, features_idx_list, self.classifier)
+            self.tree = fit(examples, classifications, features_idx_list, self.classifier)
+            return self
         else:
-            clf = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=4)
-            return clf.fit(examples, classifications)
+            self.tree = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=4)
+            return (self.tree).fit(examples, classifications)
 
-    def predict(self, tree, examples):
+
+
+    def predict(self, examples):
+        if self.tree == None:
+            return None
         if  self.criterion >= 1:
-            return predict(tree, examples)
+            return predict(self.tree, examples)
         else:
-            return tree.predict(examples).tolist()
+            return (self.tree).predict(examples).tolist()
 
 
 def k_fold_cross_validation2(folds, noisy_folds,criteria, feature_set_size):
     mean_accuracy = 0.0
     trees = []
-    classifier = FeaturesClassifier(criteria)
     for test_fold_idx in range(len(folds)):
         # train for all folds except for test_fold_idx
         X = []
@@ -171,11 +229,12 @@ def k_fold_cross_validation2(folds, noisy_folds,criteria, feature_set_size):
                 continue
             X += [row[:-1] for row in noisy_folds[train_fold_idx]]
             Y += [row[-1] for row in noisy_folds[train_fold_idx]]
+        classifier = FeaturesClassifier(criteria)
         tree = classifier.fit(X, Y, list(range(feature_set_size)))
         # test for test_fold_idx
         X = [row[:-1] for row in folds[test_fold_idx]]
         Y = [row[-1] for row in folds[test_fold_idx]]
-        results = classifier.predict(tree, X)
+        results = tree.predict(X)
         count = [1 for i in range(len(results)) if results[i] == Y[i]]
         mean_accuracy += len(count)/float(len(results))
         trees += [tree]
@@ -196,7 +255,7 @@ def select_random_features_subset(folds, noisy_folds, q):
     return reduced_features_noisy_folds, reduced_features_folds, reduced_features_set_size
 
 
-def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=1):
+def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=0):
     p = 0.5            # train set size factor
     q = 0.5            # feature set size factor
 
@@ -246,8 +305,8 @@ if __name__ == '__main__':
     else:
         ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets()
 
-        sizes = [5, 11, 15, 21, 25, 31, 35, 41, 45, 51]
-
+        #sizes = [5, 11, 15, 21, 25, 31, 35, 41, 45, 51]
+        sizes = [5, 11]
         for ensemble_size in sizes:
             start = clock()
             mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size)
