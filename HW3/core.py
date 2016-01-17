@@ -53,25 +53,18 @@ def load_data_sets():
     har_noisy_folds = pickle.load(open("har_noisy_folds.p", "rb"))
     return ad_folds, ad_noisy_folds, har_folds, har_noisy_folds
 
-def random_features_classifier(features):
-    feature = random.choice(features)
-    return feature
-
-
 
 def fit(examples, classifications, features_idx_list, features_classifier, min_samples_leaf = 4):
     ''' recursive function. builds a tree in the format [left_son, feature_idx, right_son],
         with the classification 0 or 1 in the leaves
     '''
-    if len(examples) <= min_samples_leaf:
-        '''if len(classifications) == 0:
-            return 0'''
+    if len(examples) <= min_samples_leaf or len(features_idx_list) == 0:
         count = 0
         for c in classifications:
             count += c
         return round(float(count)/len(classifications))
 
-    feature_idx = features_classifier
+    feature_idx = features_classifier(features_idx_list)
     features_idx_list.remove(feature_idx)
     left_examples = []
     right_examples = []
@@ -82,23 +75,34 @@ def fit(examples, classifications, features_idx_list, features_classifier, min_s
     # split the example for the left and right sons
     for example in examples:
         if example[feature_idx]:
-            left_examples += example
-            left_classifications += classifications[i]
+            left_examples.append(example)
+            left_classifications.append(classifications[i])
         else:
-            right_examples += example
-            right_classifications +=  classifications[i]
+            right_examples.append(example)
+            right_classifications.append(classifications[i])
         i += 1
 
-    return [fit(left_examples, left_classifications, features_idx_list), feature_idx,
-            fit(right_examples, right_classifications, features_idx_list)]
+    count = 0
+    for c in classifications:
+        count += c
+    if len(left_classifications) == 0:
+        left_son = round(float(count)/len(classifications))
+    else:
+        left_son = fit(left_examples, left_classifications, features_idx_list, features_classifier)
+    if len(right_classifications) == 0:
+        right_son = round(float(count)/len(classifications))
+    else:
+        right_son = fit(right_examples, right_classifications, features_idx_list, features_classifier)
+
+    return [left_son, feature_idx, right_son]
 
 
 def classify_example(tree, example):
     if (tree == 1 or tree == 0):
         return tree
     if example[tree[1]]:
-       return classify_example(tree[3], example)
-    return example[tree[0]]
+       return classify_example(tree[2], example)
+    return classify_example(tree[0], example)
 
 
 def predict(tree, examples):
@@ -106,7 +110,7 @@ def predict(tree, examples):
        classify_example(tree, example)
 
 
-def k_fold_cross_validation(folds, noisy_folds):
+def k_fold_cross_validation(folds, noisy_folds,criteria="entropy"):
     mean_accuracy = 0.0
     trees = []
     for test_fold_idx in range(len(folds)):
@@ -118,7 +122,7 @@ def k_fold_cross_validation(folds, noisy_folds):
                 continue
             X += [row[:-1] for row in noisy_folds[train_fold_idx]]
             Y += [row[-1] for row in noisy_folds[train_fold_idx]]
-        clf = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=4)
+        clf = tree.DecisionTreeClassifier(criterion=criteria, min_samples_leaf=4)
         clf = clf.fit(X, Y)
         # test for test_fold_idx
         X = [row[:-1] for row in folds[test_fold_idx]]
@@ -127,6 +131,54 @@ def k_fold_cross_validation(folds, noisy_folds):
         count = [1 for i in range(len(results)) if results[i] == Y[i]]
         mean_accuracy += len(count)/float(len(results))
         trees += [clf]
+    mean_accuracy /= float(len(folds))
+    return trees, mean_accuracy
+
+class FeaturesClassifier:
+    def __init__(self, criterion):
+        self.criterion = criterion
+
+    def classifier(self, features):
+        if  self.criterion == 1:
+            return random.choice(features)
+        elif self.criterion == 2:
+            return random.choice(features)
+
+    def fit(self, examples, classifications, features_idx_list):
+        if  self.criterion >= 1:
+            return fit(examples, classifications, features_idx_list, self.classifier)
+        else:
+            clf = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=4)
+            return clf.fit(examples, classifications)
+
+    def predict(self, tree, examples):
+        if  self.criterion >= 1:
+            return predict(tree, examples)
+        else:
+            return tree.predict(examples).tolist()
+
+
+def k_fold_cross_validation2(folds, noisy_folds,criteria, feature_set_size):
+    mean_accuracy = 0.0
+    trees = []
+    classifier = FeaturesClassifier(criteria)
+    for test_fold_idx in range(len(folds)):
+        # train for all folds except for test_fold_idx
+        X = []
+        Y = []
+        for train_fold_idx in range(len(folds)):
+            if train_fold_idx == test_fold_idx:
+                continue
+            X += [row[:-1] for row in noisy_folds[train_fold_idx]]
+            Y += [row[-1] for row in noisy_folds[train_fold_idx]]
+        tree = classifier.fit(X, Y, list(range(feature_set_size)))
+        # test for test_fold_idx
+        X = [row[:-1] for row in folds[test_fold_idx]]
+        Y = [row[-1] for row in folds[test_fold_idx]]
+        results = classifier.predict(tree, X)
+        count = [1 for i in range(len(results)) if results[i] == Y[i]]
+        mean_accuracy += len(count)/float(len(results))
+        trees += [tree]
     mean_accuracy /= float(len(folds))
     return trees, mean_accuracy
 
@@ -141,10 +193,10 @@ def select_random_features_subset(folds, noisy_folds, q):
     selected_features += [feature_set_size-1]
     reduced_features_noisy_folds = [[[row[f]for f in selected_features] for row in fold] for fold in noisy_folds]
     reduced_features_folds = [[[row[f]for f in selected_features] for row in fold] for fold in folds]
-    return reduced_features_noisy_folds, reduced_features_folds
+    return reduced_features_noisy_folds, reduced_features_folds, reduced_features_set_size
 
 
-def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=""):
+def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=1):
     p = 0.67            # train set size factor
     q = 0.67            # feature set size factor
 
@@ -153,11 +205,12 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=""):
     reduced_features_noisy_folds = []
     reduced_features_folds = []
     num_folds = len(folds)
+    feature_set_size = len(noisy_folds[0][0])
     for s in range(ensemble_size):
-        reduced_features_noisy_fold, reduced_features_fold = select_random_features_subset(folds, noisy_folds, q)
+        reduced_features_noisy_fold, reduced_features_fold, features_subset_size = select_random_features_subset(folds, noisy_folds, q)
         reduced_features_folds.append(reduced_features_fold)
         reduced_features_noisy_folds.append(reduced_features_noisy_fold)
-        fold_trees, _ = k_fold_cross_validation(reduced_features_fold, reduced_features_noisy_fold)
+        fold_trees, _ = k_fold_cross_validation2(reduced_features_fold, reduced_features_noisy_fold, ensemble_type % 3, features_subset_size)
         trees.append(fold_trees)
 
     # evaluate the accuracy of each ensemble for each fold and average the results
@@ -194,15 +247,16 @@ if __name__ == '__main__':
         ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets()
 
         start = clock()
-        ensemble_size = 11
+        ensemble_size = 1
         mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size)
         print("The mean accuracy for ad dataset ensemble of size 1 = " + str(mean_accuracy))
         total_time = clock() - start
         print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
-
+'''
         start = clock()
         ensemble_size = 11
         mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
         print("The mean accuracy for har dataset ensemble of size 1 = " + str(mean_accuracy))
         total_time = clock() - start
         print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+'''
