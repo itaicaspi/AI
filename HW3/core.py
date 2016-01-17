@@ -64,6 +64,15 @@ def fit(examples, classifications, features_idx_list, features_classifier, min_s
             count += c
         return round(float(count)/len(classifications))
 
+    count = 0
+    for c in classifications:
+        count += c
+    # if all the classification are the same, return the class
+    if count == len(classifications):
+        return 1
+    if count == 0:
+        return 0
+
     feature_idx = features_classifier(features_idx_list, examples, classifications)
     features_idx_list.remove(feature_idx)
     left_examples = []
@@ -83,14 +92,7 @@ def fit(examples, classifications, features_idx_list, features_classifier, min_s
         i += 1
 
 
-    count = 0
-    for c in classifications:
-        count += c
-    # if all the classification are the same, return the class
-    if count == len(classifications):
-        return 1
-    if count == 0:
-        return 0
+
     # if the son is an empty list, return the father's classification
     if len(left_classifications) == 0:
         left_son = round(float(count)/len(classifications))
@@ -203,10 +205,8 @@ class FeaturesClassifier:
             self.tree = fit(examples, classifications, features_idx_list, self.classifier)
             return self
         else:
-            self.tree = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=4)
+            self.tree = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=8)
             return (self.tree).fit(examples, classifications)
-
-
 
     def predict(self, examples):
         if self.tree == None:
