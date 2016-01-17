@@ -65,10 +65,9 @@ def load_data_sets():
     return ad_folds, ad_noisy_folds, har_folds, har_noisy_folds
 
 
-def fit(examples, classifications, features_idx_list, features_classifier, min_samples_leaf = 4):
-    ''' recursive function. builds a tree in the format [left_son, feature_idx, right_son],
-        with the classification 0 or 1 in the leaves
-    '''
+def fit(examples, classifications, features_idx_list, features_classifier, min_samples_leaf=4):
+    # recursive function. builds a tree in the format [left_son, feature_idx, right_son],
+    #    with the classification 0 or 1 in the leaves
     count = sum(classifications)
 
     # if all the classification are the same, return the class
@@ -161,11 +160,11 @@ def semi_random_feature_chooser(features, examples, classifications):
     return random.choice(features)
 
 
-
 class FeaturesClassifier:
-    def __init__(self, criterion):
+    def __init__(self, criterion, m):
         self.criterion = criterion
         self.tree = None
+        self.m = m
 
     def classifier(self, features, examples, classifications):
         if self.criterion == FeatureChooserType.Random:
@@ -175,10 +174,10 @@ class FeaturesClassifier:
 
     def fit(self, examples, classifications, features_idx_list):
         if self.criterion == FeatureChooserType.IG:
-            self.tree = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=8)
+            self.tree = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=self.m)
             return self.tree.fit(examples, classifications)
         else:
-            self.tree = fit(examples, classifications, features_idx_list, self.classifier)
+            self.tree = fit(examples, classifications, features_idx_list, self.classifier, self.m)
             return self
 
     def predict(self, examples):
@@ -190,7 +189,7 @@ class FeaturesClassifier:
             return predict(self.tree, examples)
 
 
-def k_fold_cross_validation(folds, noisy_folds, criteria):
+def k_fold_cross_validation(folds, noisy_folds, criteria, m):
     #mean_accuracy = 0.0
     features_set_size = len(folds[0][0])
     fold_size = len(folds)
@@ -204,7 +203,7 @@ def k_fold_cross_validation(folds, noisy_folds, criteria):
                 continue
             X += [row[:-1] for row in noisy_folds[train_fold_idx]]
             Y += [row[-1] for row in noisy_folds[train_fold_idx]]
-        classifier = FeaturesClassifier(criteria)
+        classifier = FeaturesClassifier(criteria, m)
         tree = classifier.fit(X, Y, list(range(features_set_size)))
         '''
         # test for test_fold_idx
@@ -220,7 +219,7 @@ def k_fold_cross_validation(folds, noisy_folds, criteria):
 
 
 def select_random_features_subset(folds, noisy_folds, q):
-    # folds are assumed to have the label as the last feature, noisy folds assumed NOT to have them
+    # folds are assumed to have the label as the last feature
     # select random features
     feature_set_size = len(noisy_folds[0][0])
     reduced_features_set_size = ceil(q*feature_set_size)
@@ -233,8 +232,8 @@ def select_random_features_subset(folds, noisy_folds, q):
 
 
 def select_random_examples_subset(folds, noisy_folds, p):
-    # folds are assumed to have the label as the last feature, noisy folds assumed NOT to have them
-    # select random features
+    # folds are assumed to have the label as the last feature
+    # select random examples
     examples_set_size = len(noisy_folds[0])
     reduced_examples_set_size = ceil(p*examples_set_size)
     examples_range = list(range(examples_set_size))
@@ -247,6 +246,8 @@ def select_random_examples_subset(folds, noisy_folds, p):
 def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=(SubsetType.features, FeatureChooserType.IG)):
     p = 0.5            # train set size factor
     q = 0.5            # feature set size factor
+    m = 8              # minimal number of examples in a leaf
+    k = 10             # number of folds (defined by noise.py)
 
     # learn 10 ensemble trees
     trees = []
@@ -254,13 +255,15 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=(SubsetType.
     reduced_folds = []
     num_folds = len(folds)
     for s in range(ensemble_size):
+        # create the reduced folds
         if ensemble_type[0] == SubsetType.features:
             reduced_noisy_fold, reduced_fold = select_random_features_subset(folds, noisy_folds, q)
         else:
             reduced_noisy_fold, reduced_fold = select_random_examples_subset(folds, noisy_folds, p)
         reduced_folds.append(reduced_fold)
         reduced_noisy_folds.append(reduced_noisy_fold)
-        fold_trees = k_fold_cross_validation(reduced_fold, reduced_noisy_fold, ensemble_type[1])
+        # train k trees
+        fold_trees = k_fold_cross_validation(reduced_fold, reduced_noisy_fold, ensemble_type[1], m)
         trees.append(fold_trees)
 
     # evaluate the accuracy of each ensemble for each fold and average the results
@@ -271,7 +274,10 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=(SubsetType.
         # labels should be the same for all trees (since we are taking the same examples)
         for s in range(ensemble_size):
             X = [row[:-1] for row in reduced_folds[s][test_fold_idx]]
-            Y = [row[-1] for row in reduced_folds[s][test_fold_idx]]
+            if ensemble_type[0] == SubsetType.features:
+                Y = [row[-1] for row in reduced_folds[s][test_fold_idx]]
+            else:
+                Y = [row[-1] for row in folds[test_fold_idx]]
             labels = (trees[s][test_fold_idx]).predict(X)
             # sum up the labels predicted by all trees to a single vector
             if results == []:
@@ -290,6 +296,14 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=(SubsetType.
     return mean_accuracy
 
 
+def continuous_features_to_binary(folds):
+    folds_new = []
+    for fold in folds:
+        fold_new = [[1*(val > 0) for val in row] for row in fold]
+        folds_new += [fold_new]
+    return folds_new
+
+
 if __name__ == '__main__':
     dumpToFile = False
     if dumpToFile:
@@ -297,8 +311,7 @@ if __name__ == '__main__':
     else:
         ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets()
 
-        #sizes = [5, 11, 15, 21, 25, 31, 35, 41, 45, 51]
-        sizes = [5, 11]
+        sizes = [5, 7, 9, 11, 13, 15, 17, 19, 21, 23]
         for subset_type in SubsetType:
             for features_chooser_type in FeatureChooserType:
                 for ensemble_size in sizes:
@@ -307,11 +320,12 @@ if __name__ == '__main__':
                     print("The mean accuracy for ad dataset ensemble of size " + str(ensemble_size) + " = " + str(mean_accuracy))
                     total_time = clock() - start
                     print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
-        '''
 
                     start = clock()
+                    har_folds = continuous_features_to_binary(har_folds)
+                    har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
                     mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
                     print("The mean accuracy for har dataset ensemble of size " + str(ensemble_size) + " = " + str(mean_accuracy))
                     total_time = clock() - start
                     print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
-        '''
+
