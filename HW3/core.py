@@ -311,13 +311,14 @@ if __name__ == '__main__':
     else:
         ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets()
 
-        sizes = [5, 7, 9, 11, 13, 15, 17, 19, 21, 23]
+        sizes = [5, 7, 9, 11, 13, 15]
         for subset_type in SubsetType:
             for features_chooser_type in FeatureChooserType:
                 for ensemble_size in sizes:
                     start = clock()
                     mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
-                    print("The mean accuracy for ad dataset ensemble of size " + str(ensemble_size) + " = " + str(mean_accuracy))
+                    print("Ad dataset, size: " + str(ensemble_size) + " type: " +
+                          str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
                     total_time = clock() - start
                     print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
@@ -325,7 +326,8 @@ if __name__ == '__main__':
                     har_folds = continuous_features_to_binary(har_folds)
                     har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
                     mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
-                    print("The mean accuracy for har dataset ensemble of size " + str(ensemble_size) + " = " + str(mean_accuracy))
+                    print("HAR dataset, size: " + str(ensemble_size) + " type: " +
+                          str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
                     total_time = clock() - start
                     print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
