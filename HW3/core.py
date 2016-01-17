@@ -70,8 +70,6 @@ def fit(examples, classifications, features_idx_list, features_classifier, min_s
         with the classification 0 or 1 in the leaves
     '''
     count = sum(classifications)
-    if len(examples) <= min_samples_leaf or len(features_idx_list) == 0:
-        return round(float(count)/len(classifications))
 
     # if all the classification are the same, return the class
     if count == len(classifications):
@@ -82,6 +80,8 @@ def fit(examples, classifications, features_idx_list, features_classifier, min_s
     # loop while the features are not meaningful (IG = 0)
     bad_feature = True
     while bad_feature:
+        if len(examples) <= min_samples_leaf or len(features_idx_list) == 0:
+            return round(float(count)/len(classifications))
         feature_idx = features_classifier(features_idx_list, examples, classifications)
         features_idx_list.remove(feature_idx)
         left_examples = []
@@ -190,20 +190,22 @@ class FeaturesClassifier:
             return predict(self.tree, examples)
 
 
-def k_fold_cross_validation(folds, noisy_folds, criteria, feature_set_size):
+def k_fold_cross_validation(folds, noisy_folds, criteria):
     #mean_accuracy = 0.0
+    features_set_size = len(folds[0][0])
+    fold_size = len(folds)
     trees = []
-    for test_fold_idx in range(len(folds)):
+    for test_fold_idx in range(fold_size):
         # train for all folds except for test_fold_idx
         X = []
         Y = []
-        for train_fold_idx in range(len(folds)):
+        for train_fold_idx in range(fold_size):
             if train_fold_idx == test_fold_idx:
                 continue
             X += [row[:-1] for row in noisy_folds[train_fold_idx]]
             Y += [row[-1] for row in noisy_folds[train_fold_idx]]
         classifier = FeaturesClassifier(criteria)
-        tree = classifier.fit(X, Y, list(range(feature_set_size)))
+        tree = classifier.fit(X, Y, list(range(features_set_size)))
         '''
         # test for test_fold_idx
         X = [row[:-1] for row in folds[test_fold_idx]]
@@ -227,7 +229,19 @@ def select_random_features_subset(folds, noisy_folds, q):
     selected_features += [feature_set_size-1]
     reduced_features_noisy_folds = [[[row[f]for f in selected_features] for row in fold] for fold in noisy_folds]
     reduced_features_folds = [[[row[f]for f in selected_features] for row in fold] for fold in folds]
-    return reduced_features_noisy_folds, reduced_features_folds, reduced_features_set_size
+    return reduced_features_noisy_folds, reduced_features_folds
+
+
+def select_random_examples_subset(folds, noisy_folds, p):
+    # folds are assumed to have the label as the last feature, noisy folds assumed NOT to have them
+    # select random features
+    examples_set_size = len(noisy_folds[0])
+    reduced_examples_set_size = ceil(p*examples_set_size)
+    examples_range = list(range(examples_set_size))
+    selected_examples = random.sample(examples_range, reduced_examples_set_size)
+    reduced_examples_noisy_folds = [[fold[row] for row in selected_examples] for fold in noisy_folds]
+    reduced_examples_folds = [[fold[row] for row in selected_examples] for fold in folds]
+    return reduced_examples_noisy_folds, reduced_examples_folds
 
 
 def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=(SubsetType.features, FeatureChooserType.IG)):
@@ -236,14 +250,17 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=(SubsetType.
 
     # learn 10 ensemble trees
     trees = []
-    reduced_features_noisy_folds = []
-    reduced_features_folds = []
+    reduced_noisy_folds = []
+    reduced_folds = []
     num_folds = len(folds)
     for s in range(ensemble_size):
-        reduced_features_noisy_fold, reduced_features_fold, features_subset_size = select_random_features_subset(folds, noisy_folds, q)
-        reduced_features_folds.append(reduced_features_fold)
-        reduced_features_noisy_folds.append(reduced_features_noisy_fold)
-        fold_trees = k_fold_cross_validation(reduced_features_fold, reduced_features_noisy_fold, ensemble_type[1], features_subset_size)
+        if ensemble_type[0] == SubsetType.features:
+            reduced_noisy_fold, reduced_fold = select_random_features_subset(folds, noisy_folds, q)
+        else:
+            reduced_noisy_fold, reduced_fold = select_random_examples_subset(folds, noisy_folds, p)
+        reduced_folds.append(reduced_fold)
+        reduced_noisy_folds.append(reduced_noisy_fold)
+        fold_trees = k_fold_cross_validation(reduced_fold, reduced_noisy_fold, ensemble_type[1])
         trees.append(fold_trees)
 
     # evaluate the accuracy of each ensemble for each fold and average the results
@@ -252,9 +269,9 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=(SubsetType.
         # test for test_fold_idx
         results = []
         # labels should be the same for all trees (since we are taking the same examples)
-        Y = [row[-1] for row in folds[test_fold_idx]]
         for s in range(ensemble_size):
-            X = [row[:-1] for row in reduced_features_folds[s][test_fold_idx]]
+            X = [row[:-1] for row in reduced_folds[s][test_fold_idx]]
+            Y = [row[-1] for row in reduced_folds[s][test_fold_idx]]
             labels = (trees[s][test_fold_idx]).predict(X)
             # sum up the labels predicted by all trees to a single vector
             if results == []:
