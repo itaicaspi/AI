@@ -11,8 +11,8 @@ def get_ad_dataset():
      # Load ad dataset
     ad_dataset_file = 'ad-dataset/ad.data'
     ad_dataset = np.genfromtxt(ad_dataset_file, delimiter=',', dtype=str)
-    ad_dataset[ad_dataset == 'ad.'] = 3
-    ad_dataset[ad_dataset == 'nonad.'] = 2
+    ad_dataset[ad_dataset == 'ad.'] = 1
+    ad_dataset[ad_dataset == 'nonad.'] = 0
     ads_features = get_ads_features(201239480, 302629605)
     ads_features += [np.shape(ad_dataset)[1]-1]
     ad_dataset = ad_dataset[:, ads_features].astype(int)
@@ -140,16 +140,17 @@ if __name__ == '__main__':
     else:
         ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets()
 
-        start = clock()
-        ensemble_size = 11
-        mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size)
-        print("The mean accuracy for ad dataset ensemble of size 1 = " + str(mean_accuracy))
-        total_time = clock() - start
-        print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+        sizes = [5, 11, 15, 21, 25, 31, 35, 41, 45, 51]
 
-        start = clock()
-        ensemble_size = 11
-        mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
-        print("The mean accuracy for har dataset ensemble of size 1 = " + str(mean_accuracy))
-        total_time = clock() - start
-        print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+        for ensemble_size in sizes:
+            start = clock()
+            mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size)
+            print("The mean accuracy for ad dataset ensemble of size " + str(ensemble_size) + " = " + str(mean_accuracy))
+            total_time = clock() - start
+            print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+
+            start = clock()
+            mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
+            print("The mean accuracy for har dataset ensemble of size " + str(ensemble_size) + " = " + str(mean_accuracy))
+            total_time = clock() - start
+            print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
