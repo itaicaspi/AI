@@ -7,6 +7,7 @@ from math import ceil, floor
 from time import clock
 import pickle
 
+
 def get_ad_dataset():
      # Load ad dataset
     ad_dataset_file = 'ad-dataset/ad.data'
@@ -51,6 +52,58 @@ def load_data_sets():
     har_folds = pickle.load(open("har_folds.p", "rb"))
     har_noisy_folds = pickle.load(open("har_noisy_folds.p", "rb"))
     return ad_folds, ad_noisy_folds, har_folds, har_noisy_folds
+
+def random_features_classifier(features):
+    feature = random.choice(features)
+    return feature
+
+
+
+def fit(examples, classifications, features_idx_list, features_classifier, min_samples_leaf = 4):
+    ''' recursive function. builds a tree in the format [left_son, feature_idx, right_son],
+        with the classification 0 or 1 in the leaves
+    '''
+    if len(examples) <= min_samples_leaf:
+        '''if len(classifications) == 0:
+            return 0'''
+        count = 0
+        for c in classifications:
+            count += c
+        return round(float(count)/len(classifications))
+
+    feature_idx = features_classifier
+    features_idx_list.remove(feature_idx)
+    left_examples = []
+    right_examples = []
+    left_classifications = []
+    right_classifications = []
+    i = 0 # index in the classifications list
+
+    # split the example for the left and right sons
+    for example in examples:
+        if example[feature_idx]:
+            left_examples += example
+            left_classifications += classifications[i]
+        else:
+            right_examples += example
+            right_classifications +=  classifications[i]
+        i += 1
+
+    return [fit(left_examples, left_classifications, features_idx_list), feature_idx,
+            fit(right_examples, right_classifications, features_idx_list)]
+
+
+def classify_example(tree, example):
+    if (tree == 1 or tree == 0):
+        return tree
+    if example[tree[1]]:
+       return classify_example(tree[3], example)
+    return example[tree[0]]
+
+
+def predict(tree, examples):
+    for example in examples:
+       classify_example(tree, example)
 
 
 def k_fold_cross_validation(folds, noisy_folds):
