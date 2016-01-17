@@ -8,8 +8,15 @@ from time import clock
 import pickle
 from enum import Enum
 
+class SubsetType(Enum):
+    features = 1
+    examples = 2
 
 
+class FeatureChooserType(Enum):
+    IG = 1
+    Random = 2
+    Semi_Random = 3
 
 
 def get_ad_dataset():
@@ -161,30 +168,30 @@ class FeaturesClassifier:
         self.tree = None
 
     def classifier(self, features, examples, classifications):
-        if  self.criterion == 1:
+        if self.criterion == FeatureChooserType.Random:
             return random.choice(features)
-        elif self.criterion == 2:
+        elif self.criterion == FeatureChooserType.Semi_Random:
             return semi_random_feature_chooser(features, examples, classifications)
 
     def fit(self, examples, classifications, features_idx_list):
-        if  self.criterion >= 1:
-            self.tree = fit(examples, classifications, features_idx_list, self.classifier)
-            return self
-        else:
+        if self.criterion == FeatureChooserType.IG:
             self.tree = tree.DecisionTreeClassifier(criterion="entropy", min_samples_leaf=8)
             return self.tree.fit(examples, classifications)
+        else:
+            self.tree = fit(examples, classifications, features_idx_list, self.classifier)
+            return self
 
     def predict(self, examples):
         if self.tree == None:
             return None
-        if self.criterion >= 1:
-            return predict(self.tree, examples)
-        else:
+        if self.criterion == FeatureChooserType.IG:
             return self.tree.predict(examples).tolist()
+        else:
+            return predict(self.tree, examples)
 
 
-def k_fold_cross_validation(folds, noisy_folds,criteria, feature_set_size):
-    mean_accuracy = 0.0
+def k_fold_cross_validation(folds, noisy_folds, criteria, feature_set_size):
+    #mean_accuracy = 0.0
     trees = []
     for test_fold_idx in range(len(folds)):
         # train for all folds except for test_fold_idx
@@ -223,7 +230,7 @@ def select_random_features_subset(folds, noisy_folds, q):
     return reduced_features_noisy_folds, reduced_features_folds, reduced_features_set_size
 
 
-def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=EnsembleType.IG_with_features_subset):
+def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=(SubsetType.features, FeatureChooserType.IG)):
     p = 0.5            # train set size factor
     q = 0.5            # feature set size factor
 
@@ -236,7 +243,7 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=EnsembleType
         reduced_features_noisy_fold, reduced_features_fold, features_subset_size = select_random_features_subset(folds, noisy_folds, q)
         reduced_features_folds.append(reduced_features_fold)
         reduced_features_noisy_folds.append(reduced_features_noisy_fold)
-        fold_trees = k_fold_cross_validation(reduced_features_fold, reduced_features_noisy_fold, ensemble_type, features_subset_size)
+        fold_trees = k_fold_cross_validation(reduced_features_fold, reduced_features_noisy_fold, ensemble_type[1], features_subset_size)
         trees.append(fold_trees)
 
     # evaluate the accuracy of each ensemble for each fold and average the results
@@ -265,15 +272,6 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=EnsembleType
 
     return mean_accuracy
 
-class SubsetType(Enum):
-    features = 1
-    examples = 2
-
-    
-class FeatureChooserType(Enum):
-    IG = 1
-    Random = 2
-    Semi_Random = 3
 
 if __name__ == '__main__':
     dumpToFile = False
@@ -283,20 +281,20 @@ if __name__ == '__main__':
         ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets()
 
         #sizes = [5, 11, 15, 21, 25, 31, 35, 41, 45, 51]
-        types = [EnsembleType.IG_with_features_subset] #EnsembleType
         sizes = [5, 11]
-        for ensemble_type in types:
-            for ensemble_size in sizes:
-                start = clock()
-                mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, ensemble_type)
-                print("The mean accuracy for ad dataset ensemble of size " + str(ensemble_size) + " = " + str(mean_accuracy))
-                total_time = clock() - start
-                print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
-    '''
+        for subset_type in SubsetType:
+            for features_chooser_type in FeatureChooserType:
+                for ensemble_size in sizes:
+                    start = clock()
+                    mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
+                    print("The mean accuracy for ad dataset ensemble of size " + str(ensemble_size) + " = " + str(mean_accuracy))
+                    total_time = clock() - start
+                    print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+        '''
 
-                start = clock()
-                mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
-                print("The mean accuracy for har dataset ensemble of size " + str(ensemble_size) + " = " + str(mean_accuracy))
-                total_time = clock() - start
-                print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
-    '''
+                    start = clock()
+                    mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
+                    print("The mean accuracy for har dataset ensemble of size " + str(ensemble_size) + " = " + str(mean_accuracy))
+                    total_time = clock() - start
+                    print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+        '''
