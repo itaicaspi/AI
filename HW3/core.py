@@ -356,7 +356,7 @@ if __name__ == '__main__':
                 random.seed()
                 start = clock()
                 mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
-                writer(fn, "Ad dataset, Size: " + str(ensemble_size) + " Type: " +
+                writer(fn, "Ad dataset, noise: " + str(n) + " Type: " +
                       str(subset_type) + ", " + str(features_chooser_type) + " = " + str(mean_accuracy))
                 total_time = clock() - start
                 writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
@@ -365,7 +365,7 @@ if __name__ == '__main__':
                 har_folds = continuous_features_to_binary(har_folds)
                 har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
                 mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
-                writer(fn, "HAR dataset, size: " + str(ensemble_size) + " type: " +
+                writer(fn, "HAR dataset, noise: " + str(n) + " type: " +
                       str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
                 total_time = clock() - start
                 writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
