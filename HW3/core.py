@@ -329,45 +329,47 @@ if __name__ == '__main__':
         n = 0.3
         ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets(n)
         sizes = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
-        for subset_type, features_chooser_type in zip(SubsetType, FeatureChooserType):
-            for ensemble_size in sizes:
-                random.seed()
-                start = clock()
-                mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
-                writer(fn, "Ad dataset, Size: " + str(ensemble_size) + " Type: " +
-                      str(subset_type) + ", " + str(features_chooser_type) + " = " + str(mean_accuracy))
-                total_time = clock() - start
-                writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+        for subset_type in SubsetType:
+            for features_chooser_type in FeatureChooserType:
+                for ensemble_size in sizes:
+                    random.seed()
+                    start = clock()
+                    mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
+                    writer(fn, "Ad dataset, Size: " + str(ensemble_size) + " Type: " +
+                          str(subset_type) + ", " + str(features_chooser_type) + " = " + str(mean_accuracy))
+                    total_time = clock() - start
+                    writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
-                start = clock()
-                har_folds = continuous_features_to_binary(har_folds)
-                har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
-                mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
-                writer(fn, "HAR dataset, size: " + str(ensemble_size) + " type: " +
-                      str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
-                total_time = clock() - start
-                writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+                    start = clock()
+                    har_folds = continuous_features_to_binary(har_folds)
+                    har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
+                    mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
+                    writer(fn, "HAR dataset, size: " + str(ensemble_size) + " type: " +
+                          str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
+                    total_time = clock() - start
+                    writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
         writer(fn, "-------------- TEST B ----------------")
         for n in noise:
             ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets(n)
             ensemble_size = 21
-            for subset_type, features_chooser_type in zip(SubsetType, FeatureChooserType):
-                random.seed()
-                start = clock()
-                mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
-                writer(fn, "Ad dataset, noise: " + str(n) + " Type: " +
-                      str(subset_type) + ", " + str(features_chooser_type) + " = " + str(mean_accuracy))
-                total_time = clock() - start
-                writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+            for subset_type in SubsetType:
+                for features_chooser_type in FeatureChooserType:
+                    random.seed()
+                    start = clock()
+                    mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
+                    writer(fn, "Ad dataset, noise: " + str(n) + " Type: " +
+                          str(subset_type) + ", " + str(features_chooser_type) + " = " + str(mean_accuracy))
+                    total_time = clock() - start
+                    writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
-                start = clock()
-                har_folds = continuous_features_to_binary(har_folds)
-                har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
-                mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
-                writer(fn, "HAR dataset, noise: " + str(n) + " type: " +
-                      str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
-                total_time = clock() - start
-                writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+                    start = clock()
+                    har_folds = continuous_features_to_binary(har_folds)
+                    har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
+                    mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
+                    writer(fn, "HAR dataset, noise: " + str(n) + " type: " +
+                          str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
+                    total_time = clock() - start
+                    writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
     f.close()
