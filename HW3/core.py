@@ -7,16 +7,18 @@ from math import ceil, floor, log2
 from time import clock
 import pickle
 from enum import Enum
-from statistics import mean
+
 
 class SubsetType(Enum):
     examples = 1
     features = 2
 
+
 class FeatureChooserType(Enum):
-    Semi_Random = 1
-    Random = 2
-    IG = 3
+    IG = 1
+    Semi_Random = 2
+    Random = 3
+
 
 def get_ad_dataset(noise=0.3):
     # Load ad dataset
@@ -316,7 +318,7 @@ if __name__ == '__main__':
         print("-------------- TEST A ----------------")
         n = 0.3
         ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets(n)
-        sizes = [13, 15, 17, 19]
+        sizes = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
         for subset_type, features_chooser_type in zip(SubsetType, FeatureChooserType):
             for ensemble_size in sizes:
                 random.seed()
