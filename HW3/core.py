@@ -308,14 +308,24 @@ def continuous_features_to_binary(folds):
     return folds_new
 
 
+def writer(file, text):
+    f = open(file, 'a')
+    f.write(text + "\n")
+    print(text)
+    f.close()
+
 if __name__ == '__main__':
+    fn = 'results.txt'
+    f = open(fn, 'w')
+    f.close()
+
     dumpToFile = False
     noise = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
     if dumpToFile:
         for n in noise:
             dump_data_sets_to_file(n)
     else:
-        print("-------------- TEST A ----------------")
+        writer(fn, "-------------- TEST A ----------------")
         n = 0.3
         ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets(n)
         sizes = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
@@ -324,21 +334,21 @@ if __name__ == '__main__':
                 random.seed()
                 start = clock()
                 mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
-                print("Ad dataset, Size: " + str(ensemble_size) + " Type: " +
+                writer(fn, "Ad dataset, Size: " + str(ensemble_size) + " Type: " +
                       str(subset_type) + ", " + str(features_chooser_type) + " = " + str(mean_accuracy))
                 total_time = clock() - start
-                print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+                writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
                 start = clock()
                 har_folds = continuous_features_to_binary(har_folds)
                 har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
                 mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
-                print("HAR dataset, size: " + str(ensemble_size) + " type: " +
+                writer(fn, "HAR dataset, size: " + str(ensemble_size) + " type: " +
                       str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
                 total_time = clock() - start
-                print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+                writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
-        print("-------------- TEST B ----------------")
+        writer(fn, "-------------- TEST B ----------------")
         for n in noise:
             ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets(n)
             ensemble_size = 21
@@ -346,18 +356,18 @@ if __name__ == '__main__':
                 random.seed()
                 start = clock()
                 mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
-                print("Ad dataset, Size: " + str(ensemble_size) + " Type: " +
+                writer(fn, "Ad dataset, Size: " + str(ensemble_size) + " Type: " +
                       str(subset_type) + ", " + str(features_chooser_type) + " = " + str(mean_accuracy))
                 total_time = clock() - start
-                print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+                writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
                 start = clock()
                 har_folds = continuous_features_to_binary(har_folds)
                 har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
                 mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
-                print("HAR dataset, size: " + str(ensemble_size) + " type: " +
+                writer(fn, "HAR dataset, size: " + str(ensemble_size) + " type: " +
                       str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
                 total_time = clock() - start
-                print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+                writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
-
+    f.close()

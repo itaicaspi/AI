@@ -1,0 +1,5 @@
+-------------- TEST A ----------------
+Ad dataset, Size: 1 Type: SubsetType.examples, FeatureChooserType.IG = 0.7408536585365854
+Time for training and evaluating = 0:2
+HAR dataset, size: 1 type: SubsetType.examples-FeatureChooserType.IG = 0.7322583084617247
+Time for training and evaluating = 0:10
