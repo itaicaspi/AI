@@ -50,17 +50,17 @@ def get_har_dataset(noise=0.3):
 def dump_data_sets_to_file(noise=0.3):
     ad_noisy_folds, ad_folds = get_ad_dataset(noise)
     har_noisy_folds, har_folds = get_har_dataset(noise)
-    pickle.dump(ad_folds, open("ad_folds_" + noise + ".p", "wb"))
-    pickle.dump(ad_noisy_folds, open("ad_noisy_folds_" +  noise + ".p", "wb"))
-    pickle.dump(har_folds, open("har_folds_" + noise + ".p", "wb"))
-    pickle.dump(har_noisy_folds, open("har_noisy_folds_" + noise + ".p", "wb"))
+    pickle.dump(ad_folds, open("ad_folds_" + str(noise) + ".p", "wb"))
+    pickle.dump(ad_noisy_folds, open("ad_noisy_folds_" + str(noise) + ".p", "wb"))
+    pickle.dump(har_folds, open("har_folds_" + str(noise) + ".p", "wb"))
+    pickle.dump(har_noisy_folds, open("har_noisy_folds_" + str(noise) + ".p", "wb"))
 
 
 def load_data_sets(noise=0.3):
-    ad_folds = pickle.load(open("ad_folds_" + noise + ".p", "rb"))
-    ad_noisy_folds = pickle.load(open("ad_noisy_folds_" + noise + ".p", "rb"))
-    har_folds = pickle.load(open("har_folds_" + noise + ".p", "rb"))
-    har_noisy_folds = pickle.load(open("har_noisy_folds_" + noise + ".p", "rb"))
+    ad_folds = pickle.load(open("ad_folds_" + str(noise) + ".p", "rb"))
+    ad_noisy_folds = pickle.load(open("ad_noisy_folds_" + str(noise) + ".p", "rb"))
+    har_folds = pickle.load(open("har_folds_" + str(noise) + ".p", "rb"))
+    har_noisy_folds = pickle.load(open("har_noisy_folds_" + str(noise) + ".p", "rb"))
     return ad_folds, ad_noisy_folds, har_folds, har_noisy_folds
 
 
@@ -147,18 +147,16 @@ def calculate_ig(feature_idx, examples, classifications):
 
 def semi_random_feature_chooser(features, examples, classifications):
     features_ig = [calculate_ig(feature, examples, classifications) for feature in features]
-    mean_ig = mean(features_ig)
-    if mean_ig != 0:
-        sum_prob = sum(features_ig) + len(features) * mean_ig
-        features_ig = [ig + mean_ig for ig in features_ig]
-        selected_prob = random.uniform(0, sum_prob)
-        sum_ig_prob = 0
-        for ig, f in zip(features_ig, features):
-            sum_ig_prob += ig
-            if selected_prob <= sum_ig_prob:
-                return f
-    else:
-        return random.choice(features)
+    sum_prob = sum(features_ig) + len(features) * 10**-5
+    features_ig = [ig + 10**-5 for ig in features_ig]
+    selected_prob = random.uniform(0, sum_prob)
+    sum_ig_prob = 0
+    for ig, f in zip(features_ig, features):
+        sum_ig_prob += ig
+        if selected_prob <= sum_ig_prob:
+            return f
+
+    return random.choice(features)
 
 
 class FeaturesClassifier:
@@ -315,9 +313,10 @@ if __name__ == '__main__':
         for n in noise:
             dump_data_sets_to_file(n)
     else:
+        print("-------------- TEST A ----------------")
         n = 0.3
         ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets(n)
-        sizes = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+        sizes = [13, 15, 17, 19]
         for subset_type, features_chooser_type in zip(SubsetType, FeatureChooserType):
             for ensemble_size in sizes:
                 random.seed()
@@ -336,7 +335,8 @@ if __name__ == '__main__':
                       str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
                 total_time = clock() - start
                 print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
-                
+
+        print("-------------- TEST B ----------------")
         for n in noise:
             ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets(n)
             ensemble_size = 21
