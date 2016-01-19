@@ -16,8 +16,8 @@ class SubsetType(Enum):
 
 class FeatureChooserType(Enum):
     IG = 1
-    Semi_Random = 2
-    Random = 3
+    Random = 2
+    Semi_Random = 3
 
 
 def get_ad_dataset(noise=0.3):
