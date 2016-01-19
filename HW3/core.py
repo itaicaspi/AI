@@ -7,20 +7,19 @@ from math import ceil, floor, log2
 from time import clock
 import pickle
 from enum import Enum
+from statistics import mean
 
 class SubsetType(Enum):
-    features = 1
-    examples = 2
-
+    examples = 1
+    features = 2
 
 class FeatureChooserType(Enum):
-    IG = 1
+    Semi_Random = 1
     Random = 2
-    Semi_Random = 3
+    IG = 3
 
-
-def get_ad_dataset():
-     # Load ad dataset
+def get_ad_dataset(noise=0.3):
+    # Load ad dataset
     ad_dataset_file = 'ad-dataset/ad.data'
     ad_dataset = np.genfromtxt(ad_dataset_file, delimiter=',', dtype=str)
     ad_dataset[ad_dataset == 'ad.'] = 1
@@ -30,10 +29,10 @@ def get_ad_dataset():
     ad_dataset = ad_dataset[:, ads_features].astype(int)
     ad_dataset = ad_dataset.tolist()
 
-    return get_noisy_folds(ad_dataset)
+    return get_noisy_folds(ad_dataset, noise)
 
 
-def get_har_dataset():
+def get_har_dataset(noise=0.3):
     # Load HAR dataset
     har_dataset_file = 'UCI HAR Dataset/train/X_train.txt'
     har_labels_file = 'UCI HAR Dataset/train/y_train.txt'
@@ -45,23 +44,23 @@ def get_har_dataset():
     har_dataset = np.concatenate((har_dataset, har_labels), axis=1)
     har_dataset = har_dataset.tolist()
 
-    return get_noisy_folds(har_dataset)
+    return get_noisy_folds(har_dataset, noise)
 
 
-def dump_data_sets_to_file():
-    ad_noisy_folds, ad_folds = get_ad_dataset()
-    har_noisy_folds, har_folds = get_har_dataset()
-    pickle.dump(ad_folds, open("ad_folds.p", "wb"))
-    pickle.dump(ad_noisy_folds, open("ad_noisy_folds.p", "wb"))
-    pickle.dump(har_folds, open("har_folds.p", "wb"))
-    pickle.dump(har_noisy_folds, open("har_noisy_folds.p", "wb"))
+def dump_data_sets_to_file(noise=0.3):
+    ad_noisy_folds, ad_folds = get_ad_dataset(noise)
+    har_noisy_folds, har_folds = get_har_dataset(noise)
+    pickle.dump(ad_folds, open("ad_folds_" + noise + ".p", "wb"))
+    pickle.dump(ad_noisy_folds, open("ad_noisy_folds_" +  noise + ".p", "wb"))
+    pickle.dump(har_folds, open("har_folds_" + noise + ".p", "wb"))
+    pickle.dump(har_noisy_folds, open("har_noisy_folds_" + noise + ".p", "wb"))
 
 
-def load_data_sets():
-    ad_folds = pickle.load(open("ad_folds.p", "rb"))
-    ad_noisy_folds = pickle.load(open("ad_noisy_folds.p", "rb"))
-    har_folds = pickle.load(open("har_folds.p", "rb"))
-    har_noisy_folds = pickle.load(open("har_noisy_folds.p", "rb"))
+def load_data_sets(noise=0.3):
+    ad_folds = pickle.load(open("ad_folds_" + noise + ".p", "rb"))
+    ad_noisy_folds = pickle.load(open("ad_noisy_folds_" + noise + ".p", "rb"))
+    har_folds = pickle.load(open("har_folds_" + noise + ".p", "rb"))
+    har_noisy_folds = pickle.load(open("har_noisy_folds_" + noise + ".p", "rb"))
     return ad_folds, ad_noisy_folds, har_folds, har_noisy_folds
 
 
@@ -102,8 +101,8 @@ def fit(examples, classifications, features_idx_list, features_classifier, min_s
             bad_feature = True
         else:
             bad_feature = False
-            left_son = fit(left_examples, left_classifications, features_idx_list, features_classifier)
-            right_son = fit(right_examples, right_classifications, features_idx_list, features_classifier)
+            left_son = fit(left_examples, left_classifications, features_idx_list, features_classifier, min_samples_leaf)
+            right_son = fit(right_examples, right_classifications, features_idx_list, features_classifier, min_samples_leaf)
 
     return [left_son, feature_idx, right_son]
 
@@ -148,16 +147,18 @@ def calculate_ig(feature_idx, examples, classifications):
 
 def semi_random_feature_chooser(features, examples, classifications):
     features_ig = [calculate_ig(feature, examples, classifications) for feature in features]
-    sum_prob = sum(features_ig)
-    if sum_prob == 0:
+    mean_ig = mean(features_ig)
+    if mean_ig != 0:
+        sum_prob = sum(features_ig) + len(features) * mean_ig
+        features_ig = [ig + mean_ig for ig in features_ig]
+        selected_prob = random.uniform(0, sum_prob)
+        sum_ig_prob = 0
+        for ig, f in zip(features_ig, features):
+            sum_ig_prob += ig
+            if selected_prob <= sum_ig_prob:
+                return f
+    else:
         return random.choice(features)
-    selected_prob = random.uniform(0, sum_prob)
-    sum_ig_prob = 0
-    for ig, f in zip(features_ig, features):
-        sum_ig_prob += ig
-        if selected_prob <= sum_ig_prob:
-            return f
-    return random.choice(features)
 
 
 class FeaturesClassifier:
@@ -191,7 +192,7 @@ class FeaturesClassifier:
 
 def k_fold_cross_validation(folds, noisy_folds, criteria, m):
     #mean_accuracy = 0.0
-    features_set_size = len(folds[0][0])
+    features_set_size = len(folds[0][0])-1
     fold_size = len(folds)
     trees = []
     for test_fold_idx in range(fold_size):
@@ -205,13 +206,15 @@ def k_fold_cross_validation(folds, noisy_folds, criteria, m):
             Y += [row[-1] for row in noisy_folds[train_fold_idx]]
         classifier = FeaturesClassifier(criteria, m)
         tree = classifier.fit(X, Y, list(range(features_set_size)))
-        '''
+
         # test for test_fold_idx
+        '''
         X = [row[:-1] for row in folds[test_fold_idx]]
         Y = [row[-1] for row in folds[test_fold_idx]]
         results = tree.predict(X)
         count = [1 for i in range(len(results)) if results[i] == Y[i]]
-        mean_accuracy += len(count)/float(len(results))
+        #mean_accuracy += len(count)/float(len(results))
+        print(len(count)/float(len(results)))
         '''
         trees += [tree]
     #mean_accuracy /= float(len(folds))
@@ -246,7 +249,7 @@ def select_random_examples_subset(folds, noisy_folds, p):
 def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=(SubsetType.features, FeatureChooserType.IG)):
     p = 0.5            # train set size factor
     q = 0.5            # feature set size factor
-    m = 8              # minimal number of examples in a leaf
+    m = 5              # minimal number of examples in a leaf
     k = 10             # number of folds (defined by noise.py)
 
     # learn 10 ensemble trees
@@ -254,6 +257,7 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=(SubsetType.
     reduced_noisy_folds = []
     reduced_folds = []
     num_folds = len(folds)
+
     for s in range(ensemble_size):
         # create the reduced folds
         if ensemble_type[0] == SubsetType.features:
@@ -285,7 +289,7 @@ def learn_ensemble(folds, noisy_folds, ensemble_size, ensemble_type=(SubsetType.
             else:
                 results = [x + y for x, y in zip(results, labels)]
         # take the average label (by dividing the sum by the ensemble size) and then round up to 1 or down to 0
-        results = [round(label/ensemble_size) for label in results]
+        results = [round((label+0.01)/float(ensemble_size)) for label in results]
         # count number of matches between predicted label and true label
         count = [1 for i in range(len(results)) if results[i] == Y[i]]
         # sum up the prediction accuracy for the ensemble for each fold
@@ -306,28 +310,52 @@ def continuous_features_to_binary(folds):
 
 if __name__ == '__main__':
     dumpToFile = False
+    noise = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
     if dumpToFile:
-        dump_data_sets_to_file()
+        for n in noise:
+            dump_data_sets_to_file(n)
     else:
-        ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets()
+        n = 0.3
+        ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets(n)
+        sizes = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+        for subset_type, features_chooser_type in zip(SubsetType, FeatureChooserType):
+            for ensemble_size in sizes:
+                random.seed()
+                start = clock()
+                mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
+                print("Ad dataset, Size: " + str(ensemble_size) + " Type: " +
+                      str(subset_type) + ", " + str(features_chooser_type) + " = " + str(mean_accuracy))
+                total_time = clock() - start
+                print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
-        sizes = [5, 7, 9, 11, 13, 15]
-        for subset_type in SubsetType:
-            for features_chooser_type in FeatureChooserType:
-                for ensemble_size in sizes:
-                    start = clock()
-                    mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
-                    print("Ad dataset, size: " + str(ensemble_size) + " type: " +
-                          str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
-                    total_time = clock() - start
-                    print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+                start = clock()
+                har_folds = continuous_features_to_binary(har_folds)
+                har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
+                mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
+                print("HAR dataset, size: " + str(ensemble_size) + " type: " +
+                      str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
+                total_time = clock() - start
+                print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+                
+        for n in noise:
+            ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets(n)
+            ensemble_size = 21
+            for subset_type, features_chooser_type in zip(SubsetType, FeatureChooserType):
+                random.seed()
+                start = clock()
+                mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
+                print("Ad dataset, Size: " + str(ensemble_size) + " Type: " +
+                      str(subset_type) + ", " + str(features_chooser_type) + " = " + str(mean_accuracy))
+                total_time = clock() - start
+                print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
-                    start = clock()
-                    har_folds = continuous_features_to_binary(har_folds)
-                    har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
-                    mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
-                    print("HAR dataset, size: " + str(ensemble_size) + " type: " +
-                          str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
-                    total_time = clock() - start
-                    print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+                start = clock()
+                har_folds = continuous_features_to_binary(har_folds)
+                har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
+                mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
+                print("HAR dataset, size: " + str(ensemble_size) + " type: " +
+                      str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
+                total_time = clock() - start
+                print("Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+
 
