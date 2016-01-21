@@ -191,7 +191,7 @@ class FeaturesClassifier:
 
 
 def k_fold_cross_validation(folds, noisy_folds, criteria, m):
-    #mean_accuracy = 0.0
+    mean_accuracy = 0.0
     features_set_size = len(folds[0][0])-1
     fold_size = len(folds)
     trees = []
@@ -208,17 +208,15 @@ def k_fold_cross_validation(folds, noisy_folds, criteria, m):
         tree = classifier.fit(X, Y, list(range(features_set_size)))
 
         # test for test_fold_idx
-        '''
         X = [row[:-1] for row in folds[test_fold_idx]]
         Y = [row[-1] for row in folds[test_fold_idx]]
         results = tree.predict(X)
         count = [1 for i in range(len(results)) if results[i] == Y[i]]
-        #mean_accuracy += len(count)/float(len(results))
-        print(len(count)/float(len(results)))
-        '''
+        mean_accuracy += len(count)/float(len(results))
+        #print(len(count)/float(len(results)))
         trees += [tree]
-    #mean_accuracy /= float(len(folds))
-    return trees #, mean_accuracy
+    mean_accuracy /= float(len(folds))
+    return trees , mean_accuracy
 
 
 def select_random_features_subset(folds, noisy_folds, q):
@@ -315,16 +313,20 @@ def writer(file, text):
     f.close()
 
 if __name__ == '__main__':
-    fn = 'results.txt'
-    f = open(fn, 'w')
-    f.close()
-
     dumpToFile = False
+    runTestA = False
+    runTestB = True
+    runEnsembles = False
     noise = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
     if dumpToFile:
         for n in noise:
             dump_data_sets_to_file(n)
-    else:
+
+    fn = 'results.txt'
+    f = open(fn, 'w')
+    f.close()
+
+    if runTestA:
         writer(fn, "-------------- TEST A ----------------")
         n = 0.3
         ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets(n)
@@ -349,27 +351,34 @@ if __name__ == '__main__':
                     total_time = clock() - start
                     writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
+    if runTestB:
         writer(fn, "-------------- TEST B ----------------")
         for n in noise:
             ad_folds, ad_noisy_folds, har_folds, har_noisy_folds = load_data_sets(n)
-            ensemble_size = 21
-            for subset_type in SubsetType:
-                for features_chooser_type in FeatureChooserType:
-                    random.seed()
-                    start = clock()
-                    mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
-                    writer(fn, "Ad dataset, noise: " + str(n) + " Type: " +
-                          str(subset_type) + ", " + str(features_chooser_type) + " = " + str(mean_accuracy))
-                    total_time = clock() - start
-                    writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+            # ID3
+            _, mean_accuracy = k_fold_cross_validation(ad_folds, ad_noisy_folds, FeatureChooserType.IG, 5)
+            writer(fn, "Ad dataset, noise: " + str(n) + " ID3 = " + str(mean_accuracy))
+            _, mean_accuracy = k_fold_cross_validation(har_folds, har_noisy_folds, FeatureChooserType.IG, 5)
+            writer(fn, "HAR dataset, noise: " + str(n) + " ID3 = " + str(mean_accuracy))
+            #Ensembles
+            if runEnsembles:
+                ensemble_size = 21
+                for subset_type in SubsetType:
+                    for features_chooser_type in FeatureChooserType:
+                        random.seed()
+                        start = clock()
+                        mean_accuracy = learn_ensemble(ad_folds, ad_noisy_folds, ensemble_size, (subset_type, features_chooser_type))
+                        writer(fn, "Ad dataset, noise: " + str(n) + " Type: " +
+                              str(subset_type) + ", " + str(features_chooser_type) + " = " + str(mean_accuracy))
+                        total_time = clock() - start
+                        writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
-                    start = clock()
-                    har_folds = continuous_features_to_binary(har_folds)
-                    har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
-                    mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
-                    writer(fn, "HAR dataset, noise: " + str(n) + " type: " +
-                          str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
-                    total_time = clock() - start
-                    writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
+                        start = clock()
+                        har_folds = continuous_features_to_binary(har_folds)
+                        har_noisy_folds = continuous_features_to_binary(har_noisy_folds)
+                        mean_accuracy = learn_ensemble(har_folds, har_noisy_folds, ensemble_size)
+                        writer(fn, "HAR dataset, noise: " + str(n) + " type: " +
+                              str(subset_type) + "-" + str(features_chooser_type) + " = " + str(mean_accuracy))
+                        total_time = clock() - start
+                        writer(fn, "Time for training and evaluating = " + str(floor(total_time / 60)) + ":" + str(floor(total_time % 60)))
 
-    f.close()

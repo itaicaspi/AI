@@ -1,3 +1,15 @@
--------------- TEST A ----------------
-Ad dataset, Size: 1 Type: SubsetType.examples, FeatureChooserType.IG = 0.7445121951219513
-Time for training and evaluating = 0:2
+-------------- TEST B ----------------
+Ad dataset, noise: 0ID3 = 0.9487618408294175
+HAR dataset, noise: 0ID3 = 0.9990106813476379
+Ad dataset, noise: 0.05ID3 = 0.998780487804878
+HAR dataset, noise: 0.05ID3 = 0.949914125729343
+Ad dataset, noise: 0.1ID3 = 0.998780487804878
+HAR dataset, noise: 0.1ID3 = 0.9073720792664893
+Ad dataset, noise: 0.15ID3 = 0.9908536585365854
+HAR dataset, noise: 0.15ID3 = 0.8637182046731737
+Ad dataset, noise: 0.2ID3 = 0.9737730290146936
+HAR dataset, noise: 0.2ID3 = 0.8151147118926623
+Ad dataset, noise: 0.25ID3 = 0.9582205191317967
+HAR dataset, noise: 0.25ID3 = 0.7728198690543411
+Ad dataset, noise: 0.3ID3 = 0.9359504363392256
+HAR dataset, noise: 0.3ID3 = 0.7228613777526821
